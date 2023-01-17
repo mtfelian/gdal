@@ -142,7 +142,7 @@ func TestGenerateContours(t *testing.T) {
 	if err := sr.FromEPSG(4326); err != nil {
 		t.Errorf("sr.FromEPSG: %v", err)
 	}
-	layer := drv.CreateLayer("contour", sr, GT_Unknown, []string{})
+	layer := drv.CreateLayer("contour", sr, GT_Unknown, nil)
 
 	if err := ContourGenerate(band, layer, []string{"LEVEL_INTERVAL=20"}, DummyProgress, nil); err != nil {
 		t.Errorf("ContourGenerate: %v", err)
