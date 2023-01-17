@@ -39,7 +39,7 @@ func main() {
 	}
 
 	fmt.Printf("Loading driver\n")
-	driver, err := gdal.GetDriverByName("GTiff")
+	driver, err := gdal.GetDriverByName(gdal.DriverNameGTiff)
 	if err != nil {
 		fmt.Println(err.Error())
 		return

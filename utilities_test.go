@@ -1,6 +1,7 @@
 package gdal
 
 import (
+	"fmt"
 	"os"
 	"testing"
 )
@@ -69,7 +70,7 @@ func TestWarp(t *testing.T) {
 		t.Errorf("Warp: %v", err)
 	}
 
-	pngdriver, err := GetDriverByName("PNG")
+	pngdriver, err := GetDriverByName(DriverNamePNG)
 	pngdriver.CreateCopy("./tmp/foo.png", dstDS, 0, nil, nil, nil)
 	dstDS.Close()
 }
@@ -118,6 +119,17 @@ func TestDEMProcessing(t *testing.T) {
 	dstDS.Close()
 }
 
+func TestEnumerateDrivers(t *testing.T) {
+	fmt.Println(">>>>> Drivers:")
+	for i := 0; i < GetDriverCount(); i++ {
+		fmt.Println(">>", GetDriver(i).ShortName())
+	}
+	fmt.Println(">>>>> OGR Drivers:")
+	for i := 0; i < OGRDriverCount(); i++ {
+		fmt.Println(">>", OGRDriverByIndex(i).Name())
+	}
+}
+
 func TestGenerateContours(t *testing.T) {
 	srcDS, err := Open("testdata/demproc.tif", ReadOnly)
 	if err != nil {
@@ -127,7 +139,7 @@ func TestGenerateContours(t *testing.T) {
 
 	band := srcDS.RasterBand(1)
 	dstFileName := "./tmp/contours.json"
-	ogrDriver := OGRDriverByName("GeoJSON")
+	ogrDriver := OGRDriverByName(OGRDriverNameGeoJSON)
 	drv, ok := ogrDriver.Create(dstFileName, nil)
 	if !ok {
 		t.Errorf("ogrDriver.Create: %v", ok)

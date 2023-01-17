@@ -9,7 +9,7 @@ import (
 )
 
 func TestTiffDriver(t *testing.T) {
-	_, err := GetDriverByName("GTiff")
+	_, err := GetDriverByName(DriverNameGTiff)
 	if err != nil {
 		t.Errorf(err.Error())
 	}
