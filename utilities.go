@@ -207,3 +207,22 @@ func DEMProcessing(dstDS string, sourceDS Dataset, processing string, colorFileN
 	}
 	return Dataset{ds}, nil
 }
+
+func ContourGenerate(band RasterBand, layer Layer, options []string, progress ProgressFunc, data interface{}) error {
+	var opts **C.char
+	if options != nil {
+		o := make([]*C.char, len(options)+1)
+		for i := 0; i < len(options); i++ {
+			o[i] = C.CString(options[i])
+			defer C.free(unsafe.Pointer(o[i]))
+		}
+		o[len(options)] = (*C.char)(unsafe.Pointer(nil))
+		opts = (**C.char)(unsafe.Pointer(&o[0]))
+	}
+
+	arg := &goGDALProgressFuncProxyArgs{
+		progress, data,
+	}
+
+	return C.GDALContourGenerateEx(band.cval, unsafe.Pointer(layer.cval), opts, C.goGDALProgressFuncProxyB(), unsafe.Pointer(arg)).Err()
+}
