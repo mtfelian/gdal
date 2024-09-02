@@ -224,5 +224,11 @@ func ContourGenerate(band RasterBand, layer Layer, options []string, progress Pr
 		progress, data,
 	}
 
-	return C.GDALContourGenerateEx(band.cval, unsafe.Pointer(layer.cval), opts, C.goGDALProgressFuncProxyB(), unsafe.Pointer(arg)).Err()
+	return ErrFromCPLErr(
+		C.GDALContourGenerateEx(band.cval,
+			unsafe.Pointer(layer.cval),
+			opts,
+			C.goGDALProgressFuncProxyB(),
+			unsafe.Pointer(arg),
+		))
 }

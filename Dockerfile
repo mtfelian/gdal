@@ -1,4 +1,4 @@
-FROM golang:1.18.7 as builder
+FROM golang:1.22.4 AS builder
 RUN apt update && apt install -y libgdal-dev
 WORKDIR '/app'
 COPY . .
