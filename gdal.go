@@ -356,39 +356,6 @@ var (
 	ErrIllegal = errors.New("Illegal Error")
 )
 
-// Error handling.  The following is bare-bones, and needs to be replaced with something more useful.
-func (err C.CPLErr) Err() error {
-	switch err {
-	case 0:
-		return nil
-	case 1:
-		return ErrDebug
-	case 2:
-		return ErrWarning
-	case 3:
-		return ErrFailure
-	case 4:
-		return ErrFailure
-	}
-	return ErrIllegal
-}
-
-func (err C.OGRErr) Err() error {
-	switch err {
-	case 0:
-		return nil
-	case 1:
-		return ErrDebug
-	case 2:
-		return ErrWarning
-	case 3:
-		return ErrFailure
-	case 4:
-		return ErrFailure
-	}
-	return ErrIllegal
-}
-
 // Pixel data types
 type DataType int
 
