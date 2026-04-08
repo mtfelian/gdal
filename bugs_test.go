@@ -212,8 +212,7 @@ func TestEmptyInputsReturnErrorsInsteadOfPanicking(t *testing.T) {
 		t.Fatalf("ToPCI: %v", err)
 	}
 
-	var pciSR SpatialReference
-	pciSR = CreateSpatialReference("")
+	pciSR := CreateSpatialReference("")
 	defer pciSR.Destroy()
 	if err := pciSR.FromPCI(pciProj, pciUnits, nil); err == nil {
 		t.Fatal("FromPCI with missing params returned nil error")

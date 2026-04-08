@@ -76,6 +76,9 @@ func TestWarp(t *testing.T) {
 	}
 
 	pngdriver, err := GetDriverByName(DriverNamePNG)
+	if err != nil {
+		t.Fatalf("GetDriverByName(PNG): %v", err)
+	}
 	pngdriver.CreateCopy("./tmp/foo.png", dstDS, 0, nil, nil, nil)
 	dstDS.Close()
 }

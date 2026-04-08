@@ -20,7 +20,7 @@ func readGridFile(filename string) (x, y, z []float64, err error) {
 	for i, el := range arr {
 		xyz := strings.Split(el, ",")
 		if len(xyz) != 3 {
-			err = errors.New("wrong input file format, should be CSV with 3 columns: y,x,z")
+			return nil, nil, nil, errors.New("wrong input file format, should be CSV with 3 columns: y,x,z")
 		}
 
 		if y[i], err = strconv.ParseFloat(strings.TrimSpace(xyz[0]), 64); err != nil {

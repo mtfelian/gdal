@@ -359,11 +359,11 @@ const (
 
 // ErrDebug and related variables are exported GDAL/OGR symbols.
 var (
-	ErrDebug   = errors.New("Debug Error")
-	ErrWarning = errors.New("Warning Error")
-	ErrFailure = errors.New("Failure Error")
-	ErrFatal   = errors.New("Fatal Error")
-	ErrIllegal = errors.New("Illegal Error")
+	ErrDebug   = errors.New("debug error")
+	ErrWarning = errors.New("warning error")
+	ErrFailure = errors.New("failure error")
+	ErrFatal   = errors.New("fatal error")
+	ErrIllegal = errors.New("illegal error")
 )
 
 // ErrFromCPLErr wraps the corresponding GDAL/OGR operation.
@@ -852,7 +852,7 @@ func Open(filename string, access Access) (Dataset, error) {
 
 	dataset := C.GDALOpen(cFilename, C.GDALAccess(access))
 	if dataset == nil {
-		return Dataset{nil}, fmt.Errorf("Error: dataset '%s' open error", filename)
+		return Dataset{nil}, fmt.Errorf("dataset %q open error", filename)
 	}
 	return Dataset{dataset}, nil
 }
@@ -897,7 +897,7 @@ func OpenEx(filename string, flags OpenFlag, allowedDrivers []string,
 
 	dataset := C.GDALOpenEx(cFilename, C.uint(flags), driversA, ooptionsA, siblingsA)
 	if dataset == nil {
-		return Dataset{nil}, fmt.Errorf("Error: dataset '%s' openEx error", filename)
+		return Dataset{nil}, fmt.Errorf("dataset %q openEx error", filename)
 	}
 	return Dataset{dataset}, nil
 }
@@ -920,7 +920,7 @@ func GetDriverByName(driverName string) (Driver, error) {
 
 	driver := C.GDALGetDriverByName(cName)
 	if driver == nil {
-		return Driver{driver}, fmt.Errorf("Error: driver '%s' not found", driverName)
+		return Driver{driver}, fmt.Errorf("driver %q not found", driverName)
 	}
 	return Driver{driver}, nil
 }
@@ -1197,7 +1197,6 @@ func (dataset Dataset) FileList() []string {
 // Close the dataset
 func (dataset Dataset) Close() {
 	C.GDALClose(dataset.cval)
-	return
 }
 
 // RasterXSize returns X size of raster.
@@ -1544,7 +1543,6 @@ func (dataset Dataset) Access() Access {
 // FlushCache writes all write cached data to disk.
 func (dataset Dataset) FlushCache() {
 	C.GDALFlushCache(dataset.cval)
-	return
 }
 
 // CreateMaskBand wraps the corresponding GDAL/OGR operation.
@@ -2288,7 +2286,7 @@ func VSIFOpenL(fileName string, fileAccess string) (VSILFILE, error) {
 	file := C.VSIFOpenL(cFileName, cFileAccess)
 
 	if file == nil {
-		return VSILFILE{nil}, fmt.Errorf("Error: VSILFILE '%s' open error", fileName)
+		return VSILFILE{nil}, fmt.Errorf("VSILFILE %q open error", fileName)
 	}
 	return VSILFILE{file}, nil
 }
@@ -2296,7 +2294,6 @@ func VSIFOpenL(fileName string, fileAccess string) (VSILFILE, error) {
 // VSIFCloseL closes file.
 func VSIFCloseL(file VSILFILE) {
 	C.VSIFCloseL(file.cval)
-	return
 }
 
 // VSIFReadL reads bytes from file.
