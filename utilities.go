@@ -27,12 +27,28 @@ func stringArrayContains(array []string, needle string) bool {
 	return false
 }
 
+func prependOptionIfMissing(options []string, flag, value string) []string {
+	if stringArrayContains(options, flag) {
+		return options
+	}
+	return append([]string{flag, value}, options...)
+}
+
+func ensureRasterOutputFormatOptions(options []string) []string {
+	return prependOptionIfMissing(options, "-of", "MEM")
+}
+
+func ensureVectorOutputFormatOptions(options []string) []string {
+	return prependOptionIfMissing(options, "-f", "MEM")
+}
+
 func Warp(dstDS string, destDS *Dataset, sourceDS []Dataset, options []string) (Dataset, error) {
+	if len(sourceDS) == 0 {
+		return Dataset{}, fmt.Errorf("warp requires at least one source dataset")
+	}
 	if dstDS == "" && destDS == nil {
 		dstDS = "MEM:::"
-		if !stringArrayContains(options, "-of") {
-			options = append([]string{"-of", "MEM"}, options...)
-		}
+		options = ensureRasterOutputFormatOptions(options)
 	}
 	length := len(options)
 	opts := make([]*C.char, length+1)
@@ -59,7 +75,7 @@ func Warp(dstDS string, destDS *Dataset, sourceDS []Dataset, options []string) (
 	}
 	ds := C.GDALWarp(cdstDS, destDScval,
 		C.int(len(sourceDS)),
-		(*C.GDALDatasetH)(unsafe.Pointer(&srcDS[0])),
+		cDatasetHandleSlicePtr(srcDS),
 		warpopts, &cerr)
 	if cerr != 0 {
 		return Dataset{}, fmt.Errorf("warp failed with code %d", cerr)
@@ -71,9 +87,7 @@ func Warp(dstDS string, destDS *Dataset, sourceDS []Dataset, options []string) (
 func Translate(dstDS string, sourceDS Dataset, options []string) (Dataset, error) {
 	if dstDS == "" {
 		dstDS = "MEM:::"
-		if !stringArrayContains(options, "-of") {
-			options = append([]string{"-of", "MEM"}, options...)
-		}
+		options = ensureRasterOutputFormatOptions(options)
 	}
 	length := len(options)
 	opts := make([]*C.char, length+1)
@@ -101,11 +115,12 @@ func Translate(dstDS string, sourceDS Dataset, options []string) (Dataset, error
 }
 
 func VectorTranslate(dstDS string, sourceDS []Dataset, options []string) (Dataset, error) {
+	if len(sourceDS) == 0 {
+		return Dataset{}, fmt.Errorf("vector translate requires at least one source dataset")
+	}
 	if dstDS == "" {
 		dstDS = "MEM:::"
-		if !stringArrayContains(options, "-f") {
-			options = append([]string{"-f", "MEM"}, options...)
-		}
+		options = ensureVectorOutputFormatOptions(options)
 	}
 	length := len(options)
 	opts := make([]*C.char, length+1)
@@ -129,7 +144,7 @@ func VectorTranslate(dstDS string, sourceDS []Dataset, options []string) (Datase
 	defer C.free(unsafe.Pointer(cdstDS))
 	ds := C.GDALVectorTranslate(cdstDS, nil,
 		C.int(len(sourceDS)),
-		(*C.GDALDatasetH)(unsafe.Pointer(&srcDS[0])),
+		cDatasetHandleSlicePtr(srcDS),
 		translateopts, &cerr)
 	if cerr != 0 {
 		return Dataset{}, fmt.Errorf("vector translate failed with code %d", cerr)
@@ -141,9 +156,7 @@ func VectorTranslate(dstDS string, sourceDS []Dataset, options []string) (Datase
 func Rasterize(dstDS string, sourceDS Dataset, options []string) (Dataset, error) {
 	if dstDS == "" {
 		dstDS = "MEM:::"
-		if !stringArrayContains(options, "-f") {
-			options = append([]string{"-of", "MEM"}, options...)
-		}
+		options = ensureRasterOutputFormatOptions(options)
 	}
 	length := len(options)
 	opts := make([]*C.char, length+1)
@@ -172,9 +185,7 @@ func Rasterize(dstDS string, sourceDS Dataset, options []string) (Dataset, error
 func DEMProcessing(dstDS string, sourceDS Dataset, processing string, colorFileName string, options []string) (Dataset, error) {
 	if dstDS == "" {
 		dstDS = "MEM:::"
-		if !stringArrayContains(options, "-f") {
-			options = append([]string{"-of", "MEM"}, options...)
-		}
+		options = ensureRasterOutputFormatOptions(options)
 	}
 	length := len(options)
 	opts := make([]*C.char, length+1)

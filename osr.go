@@ -6,7 +6,6 @@ package gdal
 */
 import "C"
 import (
-	"reflect"
 	"unsafe"
 )
 
@@ -177,12 +176,12 @@ func (sr SpatialReference) FromURL(url string) error {
 // Export coordinate system in PCI format
 func (sr SpatialReference) ToPCI() (proj, units string, params []float64, errVal error) {
 	var p, u *C.char
+	var cParams *C.double
 	err := ErrFromOGRErr(C.OSRExportToPCI(
-		sr.cval, &p, &u, (**C.double)(unsafe.Pointer(&params[0])),
+		sr.cval, &p, &u, &cParams,
 	))
-	header := (*reflect.SliceHeader)(unsafe.Pointer(&params))
-	header.Cap = 17
-	header.Len = 17
+	params = copyCDoubleArray(cParams, 17)
+	C.CPLFree(unsafe.Pointer(cParams))
 	defer C.free(unsafe.Pointer(p))
 	defer C.free(unsafe.Pointer(u))
 	return C.GoString(p), C.GoString(u), params, err
@@ -190,17 +189,20 @@ func (sr SpatialReference) ToPCI() (proj, units string, params []float64, errVal
 
 // Export coordinate system to USGS GCTP projection definition
 func (sr SpatialReference) ToUSGS() (proj, zone int, params []float64, datum int, errVal error) {
+	var cProj, cZone, cDatum C.long
+	var cParams *C.double
 	err := ErrFromOGRErr(C.OSRExportToUSGS(
 		sr.cval,
-		(*C.long)(unsafe.Pointer(&proj)),
-		(*C.long)(unsafe.Pointer(&zone)),
-		(**C.double)(unsafe.Pointer(&params[0])),
-		(*C.long)(unsafe.Pointer(&datum)),
+		&cProj,
+		&cZone,
+		&cParams,
+		&cDatum,
 	))
-
-	header := (*reflect.SliceHeader)(unsafe.Pointer(&params))
-	header.Cap = 15
-	header.Len = 15
+	params = copyCDoubleArray(cParams, 15)
+	C.CPLFree(unsafe.Pointer(cParams))
+	proj = int(cProj)
+	zone = int(cZone)
+	datum = int(cDatum)
 
 	return proj, zone, params, datum, err
 }
@@ -1169,6 +1171,24 @@ func (ct CoordinateTransform) Destroy() {
 }
 
 func (ct CoordinateTransform) Transform(numPoints int, xPoints []float64, yPoints []float64, zPoints []float64) bool {
-	val := C.OCTTransform(ct.cval, C.int(numPoints), (*C.double)(unsafe.Pointer(&xPoints[0])), (*C.double)(unsafe.Pointer(&yPoints[0])), (*C.double)(unsafe.Pointer(&zPoints[0])))
+	if numPoints < 0 {
+		return false
+	}
+	if numPoints == 0 {
+		return true
+	}
+	if len(xPoints) < numPoints || len(yPoints) < numPoints {
+		return false
+	}
+
+	var zPtr *C.double
+	if len(zPoints) > 0 {
+		if len(zPoints) < numPoints {
+			return false
+		}
+		zPtr = float64SlicePtr(zPoints)
+	}
+
+	val := C.OCTTransform(ct.cval, C.int(numPoints), float64SlicePtr(xPoints), float64SlicePtr(yPoints), zPtr)
 	return int(val) != 0
 }

@@ -7,7 +7,7 @@ package gdal
 */
 import "C"
 import (
-	"reflect"
+	"fmt"
 	"time"
 	"unsafe"
 )
@@ -185,8 +185,14 @@ type Geometry struct {
 
 // Create a geometry object from its well known binary representation
 func CreateFromWKB(wkb []uint8, srs SpatialReference, bytes int) (Geometry, error) {
-	cString := unsafe.Pointer(&wkb[0])
 	var newGeom Geometry
+	if len(wkb) == 0 {
+		return newGeom, fmt.Errorf("wkb must not be empty")
+	}
+	if bytes <= 0 || bytes > len(wkb) {
+		return newGeom, fmt.Errorf("wkb byte count %d is out of range for buffer length %d", bytes, len(wkb))
+	}
+	cString := unsafe.Pointer(&wkb[0])
 	return newGeom, ErrFromOGRErr(C.go_CreateFromWkb(
 		cString, srs.cval, &newGeom.cval, C.int(bytes),
 	))
@@ -303,6 +309,12 @@ func (geom Geometry) Envelope() Envelope {
 
 // Assign a geometry from well known binary data
 func (geom Geometry) FromWKB(wkb []uint8, bytes int) error {
+	if len(wkb) == 0 {
+		return fmt.Errorf("wkb must not be empty")
+	}
+	if bytes <= 0 || bytes > len(wkb) {
+		return fmt.Errorf("wkb byte count %d is out of range for buffer length %d", bytes, len(wkb))
+	}
 	cString := unsafe.Pointer(&wkb[0])
 	return ErrFromOGRErr(C.go_ImportFromWkb(geom.cval, cString, C.int(bytes)))
 }
@@ -332,9 +344,7 @@ func (geom Geometry) FromWKT(wkt string) error {
 func (geom Geometry) ToWKT() (string, error) {
 	var p *C.char
 	err := ErrFromOGRErr(C.OGR_G_ExportToWkt(geom.cval, &p))
-	wkt := C.GoString(p)
-	defer C.free(unsafe.Pointer(p))
-	return wkt, err
+	return goStringAndCPLFree(p), err
 }
 
 // Fetch geometry type
@@ -371,8 +381,7 @@ func CreateFromGML(gml string) Geometry {
 
 // Convert a geometry to GML format
 func (geom Geometry) ToGML() string {
-	val := C.OGR_G_ExportToGML(geom.cval)
-	return C.GoString(val)
+	return goStringAndCPLFree(C.OGR_G_ExportToGML(geom.cval))
 }
 
 // Convert a geometry to GML format with options
@@ -385,22 +394,17 @@ func (geom Geometry) ToGML_Ex(options []string) string {
 	}
 	opts[length] = (*C.char)(unsafe.Pointer(nil))
 
-	val := C.OGR_G_ExportToGMLEx(geom.cval, (**C.char)(unsafe.Pointer(&opts[0])))
-	return C.GoString(val)
+	return goStringAndCPLFree(C.OGR_G_ExportToGMLEx(geom.cval, (**C.char)(unsafe.Pointer(&opts[0]))))
 }
 
 // Convert a geometry to KML format
 func (geom Geometry) ToKML() string {
-	val := C.OGR_G_ExportToKML(geom.cval, nil)
-	result := C.GoString(val)
-	C.free(unsafe.Pointer(val))
-	return result
+	return goStringAndCPLFree(C.OGR_G_ExportToKML(geom.cval, nil))
 }
 
 // Convert a geometry to JSON format
 func (geom Geometry) ToJSON() string {
-	val := C.OGR_G_ExportToJson(geom.cval)
-	return C.GoString(val)
+	return goStringAndCPLFree(C.OGR_G_ExportToJson(geom.cval))
 }
 
 // Convert a geometry to JSON format with options
@@ -413,8 +417,7 @@ func (geom Geometry) ToJSON_ex(options []string) string {
 	}
 	opts[length] = (*C.char)(unsafe.Pointer(nil))
 
-	val := C.OGR_G_ExportToJsonEx(geom.cval, (**C.char)(unsafe.Pointer(&opts[0])))
-	return C.GoString(val)
+	return goStringAndCPLFree(C.OGR_G_ExportToJsonEx(geom.cval, (**C.char)(unsafe.Pointer(&opts[0]))))
 }
 
 // Fetch the spatial reference associated with this geometry
@@ -1113,85 +1116,52 @@ func (feature Feature) FieldAsString(index int) string {
 
 // Fetch field as list of integers
 func (feature Feature) FieldAsIntegerList(index int) []int {
-	var count int
-	cArray := C.OGR_F_GetFieldAsIntegerList(feature.cval, C.int(index), (*C.int)(unsafe.Pointer(&count)))
-	var goSlice []int
-	header := (*reflect.SliceHeader)(unsafe.Pointer(&goSlice))
-	header.Cap = count
-	header.Len = count
-	header.Data = uintptr(unsafe.Pointer(cArray))
-	return goSlice
+	var count C.int
+	cArray := C.OGR_F_GetFieldAsIntegerList(feature.cval, C.int(index), &count)
+	return copyCIntArray(cArray, count)
 }
 
 // Fetch field as list of 64-bit integers
 func (feature Feature) FieldAsInteger64List(index int) []int64 {
-	var count int
-	cArray := C.OGR_F_GetFieldAsInteger64List(feature.cval, C.int(index), (*C.int)(unsafe.Pointer(&count)))
-	var goSlice []int64
-	header := (*reflect.SliceHeader)(unsafe.Pointer(&goSlice))
-	header.Cap = count
-	header.Len = count
-	header.Data = uintptr(unsafe.Pointer(cArray))
-	return goSlice
+	var count C.int
+	cArray := C.OGR_F_GetFieldAsInteger64List(feature.cval, C.int(index), &count)
+	return copyCGIntBigArray(cArray, count)
 }
 
 // Fetch field as list of float64
 func (feature Feature) FieldAsFloat64List(index int) []float64 {
-	var count int
-	cArray := C.OGR_F_GetFieldAsDoubleList(feature.cval, C.int(index), (*C.int)(unsafe.Pointer(&count)))
-	var goSlice []float64
-	header := (*reflect.SliceHeader)(unsafe.Pointer(&goSlice))
-	header.Cap = count
-	header.Len = count
-	header.Data = uintptr(unsafe.Pointer(cArray))
-	return goSlice
+	var count C.int
+	cArray := C.OGR_F_GetFieldAsDoubleList(feature.cval, C.int(index), &count)
+	return copyCDoubleArray(cArray, count)
 }
 
 // Fetch field as list of strings
 func (feature Feature) FieldAsStringList(index int) []string {
-	p := C.OGR_F_GetFieldAsStringList(feature.cval, C.int(index))
-
-	var strings []string
-	q := uintptr(unsafe.Pointer(p))
-	for {
-		p = (**C.char)(unsafe.Pointer(q))
-		if *p == nil {
-			break
-		}
-		strings = append(strings, C.GoString(*p))
-		q += unsafe.Sizeof(q)
-	}
-
-	return strings
+	return cStringListToSlice(C.OGR_F_GetFieldAsStringList(feature.cval, C.int(index)))
 }
 
 // Fetch field as binary data
 func (feature Feature) FieldAsBinary(index int) []uint8 {
-	var count int
-	cArray := C.OGR_F_GetFieldAsBinary(feature.cval, C.int(index), (*C.int)(unsafe.Pointer(&count)))
-	var goSlice []uint8
-	header := (*reflect.SliceHeader)(unsafe.Pointer(&goSlice))
-	header.Cap = count
-	header.Len = count
-	header.Data = uintptr(unsafe.Pointer(cArray))
-	return goSlice
+	var count C.int
+	cArray := C.OGR_F_GetFieldAsBinary(feature.cval, C.int(index), &count)
+	return copyCUCharArray(cArray, count)
 }
 
 // Fetch field as date and time
 func (feature Feature) FieldAsDateTime(index int) (time.Time, bool) {
-	var year, month, day, hour, minute, second, tzFlag int
+	var year, month, day, hour, minute, second, tzFlag C.int
 	success := C.OGR_F_GetFieldAsDateTime(
 		feature.cval,
 		C.int(index),
-		(*C.int)(unsafe.Pointer(&year)),
-		(*C.int)(unsafe.Pointer(&month)),
-		(*C.int)(unsafe.Pointer(&day)),
-		(*C.int)(unsafe.Pointer(&hour)),
-		(*C.int)(unsafe.Pointer(&minute)),
-		(*C.int)(unsafe.Pointer(&second)),
-		(*C.int)(unsafe.Pointer(&tzFlag)),
+		&year,
+		&month,
+		&day,
+		&hour,
+		&minute,
+		&second,
+		&tzFlag,
 	)
-	t := time.Date(year, time.Month(month), day, hour, minute, second, 0, time.UTC)
+	t := time.Date(int(year), time.Month(month), int(day), int(hour), int(minute), int(second), 0, time.UTC)
 	return t, success != 0
 }
 
@@ -1219,21 +1189,23 @@ func (feature Feature) SetFieldString(index int, value string) {
 
 // Set field to list of integers
 func (feature Feature) SetFieldIntegerList(index int, value []int) {
+	cValue := IntSliceToCInt(value)
 	C.OGR_F_SetFieldIntegerList(
 		feature.cval,
 		C.int(index),
 		C.int(len(value)),
-		(*C.int)(unsafe.Pointer(&value[0])),
+		cIntSlicePtr(cValue),
 	)
 }
 
 // Set field to list of 64-bit integers
 func (feature Feature) SetFieldInteger64List(index int, value []int64) {
-	C.OGR_F_SetFieldIntegerList(
+	cValue := int64SliceToCGIntBig(value)
+	C.OGR_F_SetFieldInteger64List(
 		feature.cval,
 		C.int(index),
 		C.int(len(value)),
-		(*C.int)(unsafe.Pointer(&value[0])),
+		cGIntBigSlicePtr(cValue),
 	)
 }
 
@@ -1243,7 +1215,7 @@ func (feature Feature) SetFieldFloat64List(index int, value []float64) {
 		feature.cval,
 		C.int(index),
 		C.int(len(value)),
-		(*C.double)(unsafe.Pointer(&value[0])),
+		float64SlicePtr(value),
 	)
 }
 
@@ -1275,7 +1247,7 @@ func (feature Feature) SetFieldBinary(index int, value []uint8) {
 		feature.cval,
 		C.int(index),
 		C.int(len(value)),
-		unsafe.Pointer(&value[0]),
+		byteSlicePtr(value),
 	)
 }
 
@@ -1314,11 +1286,15 @@ func (this Feature) SetFrom(other Feature, forgiving int) error {
 
 // Set one feature from another, using field map
 func (this Feature) SetFromWithMap(other Feature, forgiving int, fieldMap []int) error {
+	if len(fieldMap) == 0 {
+		return fmt.Errorf("fieldMap must not be empty")
+	}
+	cFieldMap := IntSliceToCInt(fieldMap)
 	return ErrFromOGRErr(C.OGR_F_SetFromWithMap(
 		this.cval,
 		other.cval,
 		C.int(forgiving),
-		(*C.int)(unsafe.Pointer(&fieldMap[0])),
+		cIntSlicePtr(cFieldMap),
 	))
 }
 
@@ -1469,7 +1445,11 @@ func (layer Layer) DeleteField(index int) error {
 
 // Reorder all the fields of a layer
 func (layer Layer) ReorderFields(layerMap []int) error {
-	return ErrFromOGRErr(C.OGR_L_ReorderFields(layer.cval, (*C.int)(unsafe.Pointer(&layerMap[0]))))
+	if len(layerMap) == 0 {
+		return fmt.Errorf("layerMap must not be empty")
+	}
+	cLayerMap := IntSliceToCInt(layerMap)
+	return ErrFromOGRErr(C.OGR_L_ReorderFields(layer.cval, cIntSlicePtr(cLayerMap)))
 }
 
 // Reorder an existing field of a layer

@@ -432,6 +432,12 @@ func GridCreate(
 	if len(x) != len(y) || len(x) != len(z) {
 		return nil, errors.New("lengths of x, y, z should equal")
 	}
+	if len(x) == 0 {
+		return nil, errors.New("x, y, z must not be empty")
+	}
+	if nX == 0 || nY == 0 {
+		return nil, errors.New("nX and nY must be greater than zero")
+	}
 
 	poptions := unsafe.Pointer(nil)
 	switch algorithm {
@@ -518,9 +524,9 @@ func GridCreate(
 		C.GDALGridAlgorithm(algorithm),
 		poptions,
 		C.uint(uint(len(x))),
-		(*C.double)(unsafe.Pointer(&x[0])),
-		(*C.double)(unsafe.Pointer(&y[0])),
-		(*C.double)(unsafe.Pointer(&z[0])),
+		float64SlicePtr(x),
+		float64SlicePtr(y),
+		float64SlicePtr(z),
 		C.double(xMin),
 		C.double(xMax),
 		C.double(yMin),
@@ -528,7 +534,7 @@ func GridCreate(
 		C.uint(nX),
 		C.uint(nY),
 		C.GDALDataType(Float64),
-		unsafe.Pointer(&buffer[0]),
+		unsafe.Pointer(float64SlicePtr(buffer)),
 		C.goGDALProgressFuncProxyB(),
 		unsafe.Pointer(arg),
 	))

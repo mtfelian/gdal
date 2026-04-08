@@ -8,7 +8,6 @@ import "C"
 import (
 	"errors"
 	"fmt"
-	"reflect"
 	"unsafe"
 )
 
@@ -989,51 +988,66 @@ func (object MajorObject) SetDescription(desc string) {
 
 // Fetch metadata
 func (object MajorObject) Metadata(domain string) []string {
-	panic("not implemented!")
-	return nil
+	cDomain := C.CString(domain)
+	defer C.free(unsafe.Pointer(cDomain))
+
+	return cStringListToSlice(C.GDALGetMetadata(object.cval, cDomain))
 }
 func (dataset *Dataset) Metadata(domain string) []string {
 	cDomain := C.CString(domain)
 	defer C.free(unsafe.Pointer(cDomain))
 
-	p := C.GDALGetMetadata(
+	return cStringListToSlice(C.GDALGetMetadata(
 		C.GDALMajorObjectH(unsafe.Pointer(dataset.cval)),
 		cDomain,
-	)
-	if p == nil {
-		return nil
-	}
-
-	var strings []string
-	q := uintptr(unsafe.Pointer(p))
-	for {
-		item := (**C.char)(unsafe.Pointer(q))
-		if *item == nil {
-			break
-		}
-		strings = append(strings, C.GoString(*item))
-		q += unsafe.Sizeof(p)
-	}
-
-	return strings
+	))
 }
 
 // Set metadata
 func (object MajorObject) SetMetadata(metadata []string, domain string) {
-	panic("not implemented!")
-	return
+	cDomain := C.CString(domain)
+	defer C.free(unsafe.Pointer(cDomain))
+
+	var cMetadata []*C.char
+	if len(metadata) > 0 {
+		cMetadata = make([]*C.char, len(metadata)+1)
+		for i := range metadata {
+			cMetadata[i] = C.CString(metadata[i])
+			defer C.free(unsafe.Pointer(cMetadata[i]))
+		}
+	}
+
+	var cMetadataPtr **C.char
+	if len(cMetadata) > 0 {
+		cMetadataPtr = (**C.char)(unsafe.Pointer(&cMetadata[0]))
+	}
+
+	C.GDALSetMetadata(object.cval, cMetadataPtr, cDomain)
 }
 
 // Fetch a single metadata item
 func (object MajorObject) MetadataItem(name, domain string) string {
-	panic("not implemented!")
-	return ""
+	cName := C.CString(name)
+	defer C.free(unsafe.Pointer(cName))
+
+	cDomain := C.CString(domain)
+	defer C.free(unsafe.Pointer(cDomain))
+
+	return goString(C.GDALGetMetadataItem(object.cval, cName, cDomain))
 }
 
 // Set a single metadata item
 func (object MajorObject) SetMetadataItem(name, value, domain string) {
-	panic("not implemented!")
-	return
+	cName := C.CString(name)
+	defer C.free(unsafe.Pointer(cName))
+
+	cValue := C.CString(value)
+	defer C.free(unsafe.Pointer(cValue))
+
+	cDomain := C.CString(domain)
+	defer C.free(unsafe.Pointer(cDomain))
+
+	C.GDALSetMetadataItem(object.cval, cName, cValue, cDomain)
 }
 
 // TODO: Make correct class hirerarchy via interfaces
@@ -1129,19 +1143,7 @@ func (dataset Dataset) Driver() Driver {
 
 // Fetch files forming the dataset.
 func (dataset Dataset) FileList() []string {
-	p := C.GDALGetFileList(dataset.cval)
-	var strings []string
-	q := uintptr(unsafe.Pointer(p))
-	for {
-		p = (**C.char)(unsafe.Pointer(q))
-		if *p == nil {
-			break
-		}
-		strings = append(strings, C.GoString(*p))
-		q += unsafe.Sizeof(q)
-	}
-
-	return strings
+	return cStringListToSlice(C.GDALGetFileList(dataset.cval))
 }
 
 // Close the dataset
@@ -1224,27 +1226,59 @@ func (dataset Dataset) AutoCreateWarpedVRT(srcWKT, dstWKT string, resampleAlg Re
 func determineBufferType(buffer interface{}) (dataType DataType, dataPtr unsafe.Pointer, err error) {
 	switch data := buffer.(type) {
 	case []int8:
+		if len(data) == 0 {
+			err = fmt.Errorf("error: buffer must not be empty")
+			return
+		}
 		dataType = Byte
 		dataPtr = unsafe.Pointer(&data[0])
 	case []uint8:
+		if len(data) == 0 {
+			err = fmt.Errorf("error: buffer must not be empty")
+			return
+		}
 		dataType = Byte
 		dataPtr = unsafe.Pointer(&data[0])
 	case []int16:
+		if len(data) == 0 {
+			err = fmt.Errorf("error: buffer must not be empty")
+			return
+		}
 		dataType = Int16
 		dataPtr = unsafe.Pointer(&data[0])
 	case []uint16:
+		if len(data) == 0 {
+			err = fmt.Errorf("error: buffer must not be empty")
+			return
+		}
 		dataType = UInt16
 		dataPtr = unsafe.Pointer(&data[0])
 	case []int32:
+		if len(data) == 0 {
+			err = fmt.Errorf("error: buffer must not be empty")
+			return
+		}
 		dataType = Int32
 		dataPtr = unsafe.Pointer(&data[0])
 	case []uint32:
+		if len(data) == 0 {
+			err = fmt.Errorf("error: buffer must not be empty")
+			return
+		}
 		dataType = UInt32
 		dataPtr = unsafe.Pointer(&data[0])
 	case []float32:
+		if len(data) == 0 {
+			err = fmt.Errorf("error: buffer must not be empty")
+			return
+		}
 		dataType = Float32
 		dataPtr = unsafe.Pointer(&data[0])
 	case []float64:
+		if len(data) == 0 {
+			err = fmt.Errorf("error: buffer must not be empty")
+			return
+		}
 		dataType = Float64
 		dataPtr = unsafe.Pointer(&data[0])
 	default:
@@ -1268,6 +1302,18 @@ func (dataset Dataset) IO(
 		return err
 	}
 
+	if bandCount < 0 {
+		return fmt.Errorf("error: bandCount must not be negative")
+	}
+	if len(bandMap) > 0 && len(bandMap) < bandCount {
+		return fmt.Errorf("error: bandMap length %d is smaller than bandCount %d", len(bandMap), bandCount)
+	}
+
+	var cBandMap []C.int
+	if len(bandMap) > 0 && bandCount > 0 {
+		cBandMap = IntSliceToCInt(bandMap[:bandCount])
+	}
+
 	return ErrFromCPLErr(C.GDALDatasetRasterIO(
 		dataset.cval,
 		C.GDALRWFlag(rwFlag),
@@ -1276,7 +1322,7 @@ func (dataset Dataset) IO(
 		C.int(bufXSize), C.int(bufYSize),
 		C.GDALDataType(dataType),
 		C.int(bandCount),
-		(*C.int)(unsafe.Pointer(&IntSliceToCInt(bandMap)[0])),
+		cIntSlicePtr(cBandMap),
 		C.int(pixelSpace), C.int(lineSpace), C.int(bandSpace),
 	))
 }
@@ -1290,6 +1336,13 @@ func (dataset Dataset) AdviseRead(
 	bandMap []int,
 	options []string,
 ) error {
+	if bandCount < 0 {
+		return fmt.Errorf("error: bandCount must not be negative")
+	}
+	if len(bandMap) > 0 && len(bandMap) < bandCount {
+		return fmt.Errorf("error: bandMap length %d is smaller than bandCount %d", len(bandMap), bandCount)
+	}
+
 	length := len(options)
 	cOptions := make([]*C.char, length+1)
 	for i := 0; i < length; i++ {
@@ -1298,13 +1351,18 @@ func (dataset Dataset) AdviseRead(
 	}
 	cOptions[length] = (*C.char)(unsafe.Pointer(nil))
 
+	var cBandMap []C.int
+	if len(bandMap) > 0 && bandCount > 0 {
+		cBandMap = IntSliceToCInt(bandMap[:bandCount])
+	}
+
 	return ErrFromCPLErr(C.GDALDatasetAdviseRead(
 		dataset.cval,
 		C.int(xOff), C.int(yOff), C.int(xSize), C.int(ySize),
 		C.int(bufXSize), C.int(bufYSize),
 		C.GDALDataType(dataType),
 		C.int(bandCount),
-		(*C.int)(unsafe.Pointer(&IntSliceToCInt(bandMap)[0])),
+		cIntSlicePtr(cBandMap),
 		(**C.char)(unsafe.Pointer(&cOptions[0])),
 	))
 }
@@ -1394,15 +1452,31 @@ func (dataset Dataset) BuildOverviews(
 	cResampling := C.CString(resampling)
 	defer C.free(unsafe.Pointer(cResampling))
 
+	if nOverviews < 0 {
+		return fmt.Errorf("error: nOverviews must not be negative")
+	}
+	if nBands < 0 {
+		return fmt.Errorf("error: nBands must not be negative")
+	}
+	if len(overviewList) < nOverviews {
+		return fmt.Errorf("error: overviewList length %d is smaller than nOverviews %d", len(overviewList), nOverviews)
+	}
+	if len(bandList) < nBands {
+		return fmt.Errorf("error: bandList length %d is smaller than nBands %d", len(bandList), nBands)
+	}
+
+	cOverviewList := IntSliceToCInt(overviewList[:nOverviews])
+	cBandList := IntSliceToCInt(bandList[:nBands])
+
 	arg := &goGDALProgressFuncProxyArgs{progress, data}
 
 	return ErrFromCPLErr(C.GDALBuildOverviews(
 		dataset.cval,
 		cResampling,
 		C.int(nOverviews),
-		(*C.int)(unsafe.Pointer(&IntSliceToCInt(overviewList)[0])),
+		cIntSlicePtr(cOverviewList),
 		C.int(nBands),
-		(*C.int)(unsafe.Pointer(&IntSliceToCInt(bandList)[0])),
+		cIntSlicePtr(cBandList),
 		C.goGDALProgressFuncProxyB(),
 		unsafe.Pointer(arg),
 	))
@@ -1465,9 +1539,9 @@ func (rasterBand RasterBand) RasterDataType() DataType {
 
 // Fetch the "natural" block size of this band
 func (rasterBand RasterBand) BlockSize() (int, int) {
-	var xSize, ySize int
-	C.GDALGetBlockSize(rasterBand.cval, (*C.int)(unsafe.Pointer(&xSize)), (*C.int)(unsafe.Pointer(&ySize)))
-	return xSize, ySize
+	var xSize, ySize C.int
+	C.GDALGetBlockSize(rasterBand.cval, &xSize, &ySize)
+	return int(xSize), int(ySize)
 }
 
 // Advise driver of upcoming read requests
@@ -1598,8 +1672,8 @@ func (rasterBand RasterBand) Overview(level int) RasterBand {
 
 // Fetch the no data value for this band
 func (rasterBand RasterBand) NoDataValue() (val float64, valid bool) {
-	var success int
-	noDataVal := C.GDALGetRasterNoDataValue(rasterBand.cval, (*C.int)(unsafe.Pointer(&success)))
+	var success C.int
+	noDataVal := C.GDALGetRasterNoDataValue(rasterBand.cval, &success)
 	return float64(noDataVal), success != 0
 }
 
@@ -1610,19 +1684,7 @@ func (rasterBand RasterBand) SetNoDataValue(val float64) error {
 
 // Fetch the list of category names for this raster
 func (rasterBand RasterBand) CategoryNames() []string {
-	p := C.GDALGetRasterCategoryNames(rasterBand.cval)
-	var strings []string
-	q := uintptr(unsafe.Pointer(p))
-	for {
-		p = (**C.char)(unsafe.Pointer(q))
-		if *p == nil {
-			break
-		}
-		strings = append(strings, C.GoString(*p))
-		q += unsafe.Sizeof(q)
-	}
-
-	return strings
+	return cStringListToSlice(C.GDALGetRasterCategoryNames(rasterBand.cval))
 }
 
 // Set the category names for this band
@@ -1640,15 +1702,15 @@ func (rasterBand RasterBand) SetRasterCategoryNames(names []string) error {
 
 // Fetch the minimum value for this band
 func (rasterBand RasterBand) GetMinimum() (val float64, valid bool) {
-	var success int
-	min := C.GDALGetRasterMinimum(rasterBand.cval, (*C.int)(unsafe.Pointer(&success)))
+	var success C.int
+	min := C.GDALGetRasterMinimum(rasterBand.cval, &success)
 	return float64(min), success != 0
 }
 
 // Fetch the maximum value for this band
 func (rasterBand RasterBand) GetMaximum() (val float64, valid bool) {
-	var success int
-	max := C.GDALGetRasterMaximum(rasterBand.cval, (*C.int)(unsafe.Pointer(&success)))
+	var success C.int
+	max := C.GDALGetRasterMaximum(rasterBand.cval, &success)
 	return float64(max), success != 0
 }
 
@@ -1714,8 +1776,8 @@ func (rasterBand RasterBand) SetUnitType(unit string) error {
 
 // Fetch the raster value offset
 func (rasterBand RasterBand) GetOffset() (float64, bool) {
-	var success int
-	val := C.GDALGetRasterOffset(rasterBand.cval, (*C.int)(unsafe.Pointer(&success)))
+	var success C.int
+	val := C.GDALGetRasterOffset(rasterBand.cval, &success)
 	return float64(val), success != 0
 }
 
@@ -1726,8 +1788,8 @@ func (rasterBand RasterBand) SetOffset(offset float64) error {
 
 // Fetch the raster value scale
 func (rasterBand RasterBand) GetScale() (float64, bool) {
-	var success int
-	val := C.GDALGetRasterScale(rasterBand.cval, (*C.int)(unsafe.Pointer(&success)))
+	var success C.int
+	val := C.GDALGetRasterScale(rasterBand.cval, &success)
 	return float64(val), success != 0
 }
 
@@ -1793,22 +1855,21 @@ func (rasterBand RasterBand) DefaultHistogram(
 	}
 
 	var cHistogram *C.GUIntBig
+	var cBuckets C.int
 
 	err = ErrFromCPLErr(C.GDALGetDefaultHistogramEx(
 		rasterBand.cval,
 		(*C.double)(&min),
 		(*C.double)(&max),
-		(*C.int)(unsafe.Pointer(&buckets)),
+		&cBuckets,
 		&cHistogram,
 		C.int(force),
 		C.goGDALProgressFuncProxyB(),
 		unsafe.Pointer(arg),
 	))
-
-	sliceHeader := (*reflect.SliceHeader)(unsafe.Pointer(&histogram))
-	sliceHeader.Cap = buckets
-	sliceHeader.Len = buckets
-	sliceHeader.Data = uintptr(unsafe.Pointer(cHistogram))
+	buckets = int(cBuckets)
+	histogram = copyCUIntBigArray(cHistogram, cBuckets)
+	C.CPLFree(unsafe.Pointer(cHistogram))
 
 	return min, max, buckets, histogram, err
 }

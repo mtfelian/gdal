@@ -11,7 +11,7 @@ import (
 func TestTiffDriver(t *testing.T) {
 	_, err := GetDriverByName(DriverNameGTiff)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%v", err)
 	}
 }
 
