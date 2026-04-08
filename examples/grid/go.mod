@@ -4,4 +4,4 @@ go 1.25
 
 replace github.com/mtfelian/gdal/v2 => ../..
 
-require github.com/mtfelian/gdal/v2 v2.0.0
+require github.com/mtfelian/gdal/v2 v2.1.4
