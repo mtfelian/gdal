@@ -6,6 +6,8 @@ package gdal
 */
 import "C"
 import (
+	"fmt"
+	"strings"
 	"unsafe"
 )
 
@@ -38,8 +40,7 @@ func (sr SpatialReference) FromWKT(wkt string) error {
 func (sr SpatialReference) ToWKT() (string, error) {
 	var p *C.char
 	err := ErrFromOGRErr(C.OSRExportToWkt(sr.cval, &p))
-	wkt := C.GoString(p)
-	return wkt, err
+	return goStringAndCPLFree(p), err
 }
 
 // ToPrettyWKT exports sr as formatted WKT.
@@ -48,8 +49,7 @@ func (sr SpatialReference) ToPrettyWKT(simplify bool) (string, error) {
 	err := ErrFromOGRErr(C.OSRExportToPrettyWkt(
 		sr.cval, &p, BoolToCInt(simplify),
 	))
-	wkt := C.GoString(p)
-	return wkt, err
+	return goStringAndCPLFree(p), err
 }
 
 // FromEPSG initializes sr from an EPSG code.
@@ -112,19 +112,27 @@ func (sr SpatialReference) FromProj4(input string) error {
 func (sr SpatialReference) ToProj4() (string, error) {
 	var p *C.char
 	err := ErrFromOGRErr(C.OSRExportToProj4(sr.cval, &p))
-	proj4 := C.GoString(p)
-	return proj4, err
+	return goStringAndCPLFree(p), err
 }
 
 // FromESRI initializes sr from an ESRI projection string.
 func (sr SpatialReference) FromESRI(input string) error {
-	cString := C.CString(input)
-	defer C.free(unsafe.Pointer(cString))
-	return ErrFromOGRErr(C.OSRImportFromProj4(sr.cval, cString))
+	lines := strings.Split(strings.ReplaceAll(input, "\r\n", "\n"), "\n")
+	cLines := make([]*C.char, len(lines)+1)
+	for i := range lines {
+		cLines[i] = C.CString(lines[i])
+		defer C.free(unsafe.Pointer(cLines[i]))
+	}
+
+	return ErrFromOGRErr(C.OSRImportFromESRI(sr.cval, &cLines[0]))
 }
 
 // FromPCI initializes sr from a PCI projection definition.
 func (sr SpatialReference) FromPCI(proj, units string, params []float64) error {
+	if len(params) < 17 {
+		return fmt.Errorf("pci projection definition requires 17 parameters")
+	}
+
 	cProj := C.CString(proj)
 	defer C.free(unsafe.Pointer(cProj))
 	cUnits := C.CString(units)
@@ -140,6 +148,10 @@ func (sr SpatialReference) FromPCI(proj, units string, params []float64) error {
 
 // FromUSGS initializes sr from a USGS projection definition.
 func (sr SpatialReference) FromUSGS(projsys, zone int, params []float64, datum int) error {
+	if len(params) < 15 {
+		return fmt.Errorf("usgs projection definition requires 15 parameters")
+	}
+
 	return ErrFromOGRErr(C.OSRImportFromUSGS(
 		sr.cval,
 		C.long(projsys),
@@ -172,7 +184,7 @@ func (sr SpatialReference) FromERM(proj, datum, units string) error {
 func (sr SpatialReference) FromURL(url string) error {
 	cURL := C.CString(url)
 	defer C.free(unsafe.Pointer(cURL))
-	return ErrFromOGRErr(C.OSRImportFromXML(sr.cval, cURL))
+	return ErrFromOGRErr(C.OSRImportFromUrl(sr.cval, cURL))
 }
 
 // ToPCI exports sr as a PCI projection definition.
@@ -186,9 +198,7 @@ func (sr SpatialReference) ToPCI() (proj, units string, params []float64, errVal
 	// releasing the native buffer.
 	params = copyCDoubleArray(cParams, 17)
 	C.CPLFree(unsafe.Pointer(cParams))
-	defer C.free(unsafe.Pointer(p))
-	defer C.free(unsafe.Pointer(u))
-	return C.GoString(p), C.GoString(u), params, err
+	return goStringAndCPLFree(p), goStringAndCPLFree(u), params, err
 }
 
 // ToUSGS exports sr as a USGS GCTP projection definition.
@@ -217,16 +227,14 @@ func (sr SpatialReference) ToUSGS() (proj, zone int, params []float64, datum int
 func (sr SpatialReference) ToXML() (xml string, errVal error) {
 	var x *C.char
 	err := ErrFromOGRErr(C.OSRExportToXML(sr.cval, &x, nil))
-	defer C.free(unsafe.Pointer(x))
-	return C.GoString(x), err
+	return goStringAndCPLFree(x), err
 }
 
 // ToMICoordSys exports sr in MapInfo CoordSys format.
 func (sr SpatialReference) ToMICoordSys() (output string, errVal error) {
 	var x *C.char
 	err := ErrFromOGRErr(C.OSRExportToMICoordSys(sr.cval, &x))
-	defer C.free(unsafe.Pointer(x))
-	return C.GoString(x), err
+	return goStringAndCPLFree(x), err
 }
 
 // Export coordinate system in ERMapper format

@@ -1838,6 +1838,10 @@ func (rasterBand RasterBand) Histogram(
 	progress ProgressFunc,
 	data interface{},
 ) ([]int, error) {
+	if buckets <= 0 {
+		return nil, fmt.Errorf("histogram bucket count must be greater than zero")
+	}
+
 	arg := &goGDALProgressFuncProxyArgs{
 		progress, data,
 	}

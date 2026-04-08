@@ -1,6 +1,8 @@
 package gdal
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"reflect"
 	"runtime"
 	"strings"
@@ -197,6 +199,32 @@ func TestEmptyInputsReturnErrorsInsteadOfPanicking(t *testing.T) {
 	if err := rb.IO(Read, 0, 0, 1, 1, []uint8{}, 1, 1, 0, 0); err == nil {
 		t.Fatal("RasterBand.IO with empty buffer returned nil error")
 	}
+
+	sr := createSpatialReferenceFromEPSG(t, 32633)
+	defer sr.Destroy()
+
+	pciProj, pciUnits, _, err := sr.ToPCI()
+	if err != nil {
+		t.Fatalf("ToPCI: %v", err)
+	}
+
+	var pciSR SpatialReference
+	pciSR = CreateSpatialReference("")
+	defer pciSR.Destroy()
+	if err := pciSR.FromPCI(pciProj, pciUnits, nil); err == nil {
+		t.Fatal("FromPCI with missing params returned nil error")
+	}
+
+	usgsProj, usgsZone, _, usgsDatum, err := sr.ToUSGS()
+	if err != nil {
+		t.Fatalf("ToUSGS: %v", err)
+	}
+
+	usgsSR := CreateSpatialReference("")
+	defer usgsSR.Destroy()
+	if err := usgsSR.FromUSGS(usgsProj, usgsZone, nil, usgsDatum); err == nil {
+		t.Fatal("FromUSGS with missing params returned nil error")
+	}
 }
 
 func TestCoordinateTransformHandlesZeroPointsAndNilZ(t *testing.T) {
@@ -332,6 +360,92 @@ func TestSpatialReferenceToUSGSRoundTrip(t *testing.T) {
 	}
 }
 
+func TestSpatialReferenceImportsHandleESRIAndURL(t *testing.T) {
+	source := createSpatialReferenceFromEPSG(t, 4326)
+	defer source.Destroy()
+
+	esri := source.Clone()
+	defer esri.Destroy()
+	if err := esri.MorphToESRI(); err != nil {
+		t.Fatalf("MorphToESRI: %v", err)
+	}
+
+	esriWKT, err := esri.ToWKT()
+	if err != nil {
+		t.Fatalf("esri.ToWKT: %v", err)
+	}
+	esriWKT = strings.ReplaceAll(esriWKT, ",", ",\n")
+
+	fromESRI := CreateSpatialReference("")
+	defer fromESRI.Destroy()
+	if err := fromESRI.FromESRI(esriWKT); err != nil {
+		t.Fatalf("FromESRI: %v", err)
+	}
+	if !source.IsSameGeographicCS(fromESRI) {
+		t.Fatal("FromESRI did not restore the expected geographic coordinate system")
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain")
+		_, _ = w.Write([]byte("EPSG:4326"))
+	}))
+	defer server.Close()
+
+	fromURL := CreateSpatialReference("")
+	defer fromURL.Destroy()
+	if err := fromURL.FromURL(server.URL); err != nil {
+		t.Fatalf("FromURL: %v", err)
+	}
+	if !source.IsSame(fromURL) {
+		t.Fatal("FromURL did not restore the expected spatial reference")
+	}
+}
+
+func TestSpatialReferenceTextExportsReturnContent(t *testing.T) {
+	sr := createSpatialReferenceFromEPSG(t, 4326)
+	defer sr.Destroy()
+
+	wkt, err := sr.ToWKT()
+	if err != nil {
+		t.Fatalf("ToWKT: %v", err)
+	}
+	if !strings.Contains(wkt, "GEOGCS") {
+		t.Fatalf("ToWKT = %q, want GEOGCS content", wkt)
+	}
+
+	prettyWKT, err := sr.ToPrettyWKT(false)
+	if err != nil {
+		t.Fatalf("ToPrettyWKT: %v", err)
+	}
+	if !strings.Contains(prettyWKT, "GEOGCS") {
+		t.Fatalf("ToPrettyWKT = %q, want GEOGCS content", prettyWKT)
+	}
+
+	proj4, err := sr.ToProj4()
+	if err != nil {
+		t.Fatalf("ToProj4: %v", err)
+	}
+	if !strings.Contains(proj4, "+proj=longlat") {
+		t.Fatalf("ToProj4 = %q, want longlat content", proj4)
+	}
+
+	xml, err := sr.ToXML()
+	if err != nil {
+		t.Fatalf("ToXML: %v", err)
+	}
+	if !strings.Contains(xml, "<") {
+		t.Fatalf("ToXML = %q, want XML content", xml)
+	}
+
+	miCoordSys, err := sr.ToMICoordSys()
+	if err != nil {
+		t.Fatalf("ToMICoordSys: %v", err)
+	}
+	if miCoordSys == "" {
+		t.Fatal("ToMICoordSys returned an empty string")
+	}
+}
+
 func TestRasterOutputFormatOptionsRespectExplicitOfFlag(t *testing.T) {
 	options := []string{"-of", "GTiff", "-tr", "10", "10"}
 	got := ensureRasterOutputFormatOptions(options)
@@ -403,6 +517,18 @@ func TestDefaultHistogramReturnsUsableGoSlice(t *testing.T) {
 	}
 	if total <= 0 {
 		t.Fatal("DefaultHistogram returned an unusable slice")
+	}
+}
+
+func TestHistogramRejectsNonPositiveBuckets(t *testing.T) {
+	ds, err := Open("testdata/demproc.tif", ReadOnly)
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	defer ds.Close()
+
+	if _, err := ds.RasterBand(1).Histogram(0, 1, 0, 0, 0, DummyProgress, nil); err == nil {
+		t.Fatal("Histogram with zero buckets returned nil error")
 	}
 }
 
