@@ -50,12 +50,20 @@ func main() {
 
 	fmt.Printf("Creating projection\n")
 	spatialRef := gdal.CreateSpatialReference("")
+	defer spatialRef.Destroy()
 
 	fmt.Printf("Setting EPSG code\n")
-	spatialRef.FromEPSG(3857)
+	if err := spatialRef.FromEPSG(3857); err != nil {
+		fmt.Println(err.Error())
+		return
+	}
 
 	fmt.Printf("Converting to WKT\n")
 	srString, err := spatialRef.ToWKT()
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
 
 	fmt.Printf("Assigning projection: %s\n", srString)
 	dataset.SetProjection(srString)

@@ -2,11 +2,10 @@ package main
 
 import (
 	"bytes"
-	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"math"
+	"os"
 	"strconv"
 	"strings"
 
@@ -15,7 +14,7 @@ import (
 
 func readFile(filename string) (x, y, z []float64, err error) {
 	var b []byte
-	if b, err = ioutil.ReadFile(filename); err != nil {
+	if b, err = os.ReadFile(filename); err != nil {
 		return
 	}
 	arr := strings.Split(strings.TrimSpace(string(b)), "\n")
@@ -23,7 +22,7 @@ func readFile(filename string) (x, y, z []float64, err error) {
 	for i, el := range arr {
 		xyz := strings.Split(el, ",")
 		if len(xyz) != 3 {
-			err = errors.New("wrong input file format, should be CSV with 3 columns: y,x,z")
+			return nil, nil, nil, fmt.Errorf("wrong input file format, should be CSV with 3 columns: y,x,z")
 		}
 
 		if y[i], err = strconv.ParseFloat(strings.TrimSpace(xyz[0]), 64); err != nil {
@@ -56,7 +55,7 @@ func writeFile(filename string, z []float64, xMin, xMax, yMin, yMax float64, nX,
 			return
 		}
 	}
-	return ioutil.WriteFile(filename, b.Bytes(), 0644)
+	return os.WriteFile(filename, b.Bytes(), 0o644)
 }
 
 func main() {
