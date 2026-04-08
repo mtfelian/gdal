@@ -251,15 +251,14 @@ func ContourGenerate(band RasterBand, layer Layer, options []string, progress Pr
 		opts = (**C.char)(unsafe.Pointer(&o[0]))
 	}
 
-	arg := &goGDALProgressFuncProxyArgs{
-		progress, data,
-	}
+	callback := newGoGDALProgressCallback(progress, data)
+	defer callback.close()
 
 	return ErrFromCPLErr(
 		C.GDALContourGenerateEx(band.cval,
 			unsafe.Pointer(layer.cval),
 			opts,
-			C.goGDALProgressFuncProxyB(),
-			unsafe.Pointer(arg),
+			callback.fn,
+			callback.arg,
 		))
 }

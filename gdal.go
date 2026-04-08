@@ -8,6 +8,7 @@ import "C"
 import (
 	"errors"
 	"fmt"
+	"runtime/cgo"
 	"unsafe"
 )
 
@@ -704,15 +705,58 @@ func DestroyScaledProgress(data unsafe.Pointer) {
 // -----------------------------------------------------------------------
 
 type goGDALProgressFuncProxyArgs struct {
-	progresssFunc ProgressFunc
-	data          interface{}
+	progressFunc ProgressFunc
+	data         interface{}
+}
+
+type goGDALProgressCallback struct {
+	fn     C.GDALProgressFunc
+	arg    unsafe.Pointer
+	handle cgo.Handle
+}
+
+func newGoGDALProgressCallback(progress ProgressFunc, data interface{}) goGDALProgressCallback {
+	if progress == nil {
+		return goGDALProgressCallback{}
+	}
+
+	handle := cgo.NewHandle(goGDALProgressFuncProxyArgs{
+		progressFunc: progress,
+		data:         data,
+	})
+
+	return goGDALProgressCallback{
+		fn:     C.goGDALProgressFuncProxyB(),
+		arg:    C.goGDALProgressFuncProxyArg(C.uintptr_t(handle)),
+		handle: handle,
+	}
+}
+
+func (callback goGDALProgressCallback) close() {
+	if callback.handle != 0 {
+		callback.handle.Delete()
+	}
+}
+
+func callGoGDALProgressFuncProxy(handle uintptr, complete float64, message string) int {
+	if handle == 0 {
+		return 1
+	}
+
+	arg, ok := cgo.Handle(handle).Value().(goGDALProgressFuncProxyArgs)
+	if !ok || arg.progressFunc == nil {
+		return 1
+	}
+
+	return arg.progressFunc(complete, message, arg.data)
 }
 
 //export goGDALProgressFuncProxyA
-func goGDALProgressFuncProxyA(complete C.double, message *C.char, data unsafe.Pointer) int {
-	arg := (*goGDALProgressFuncProxyArgs)(data)
-	return arg.progresssFunc(
-		float64(complete), C.GoString(message), arg.data,
+func goGDALProgressFuncProxyA(complete C.double, message *C.char, handle C.uintptr_t) int {
+	return callGoGDALProgressFuncProxy(
+		uintptr(handle),
+		float64(complete),
+		C.GoString(message),
 	)
 }
 
@@ -801,31 +845,16 @@ func (driver Driver) CreateCopy(
 	}
 	opts[length] = (*C.char)(unsafe.Pointer(nil))
 
-	var h C.GDALDatasetH
+	callback := newGoGDALProgressCallback(progress, data)
+	defer callback.close()
 
-	if progress == nil {
-		h = C.GDALCreateCopy(
-			driver.cval, name,
-			sourceDataset.cval,
-			C.int(strict),
-			(**C.char)(unsafe.Pointer(&opts[0])),
-			nil,
-			nil,
-		)
-	} else {
-		arg := &goGDALProgressFuncProxyArgs{
-			progress, data,
-		}
-		h = C.GDALCreateCopy(
-			driver.cval, name,
-			sourceDataset.cval,
-			C.int(strict), (**C.char)(unsafe.Pointer(&opts[0])),
-			C.goGDALProgressFuncProxyB(),
-			unsafe.Pointer(arg),
-		)
-	}
-
-	return Dataset{h}
+	return Dataset{C.GDALCreateCopy(
+		driver.cval, name,
+		sourceDataset.cval,
+		C.int(strict), (**C.char)(unsafe.Pointer(&opts[0])),
+		callback.fn,
+		callback.arg,
+	)}
 }
 
 // IdentifyDriver returns the driver needed to access the provided dataset name.
@@ -1518,7 +1547,8 @@ func (dataset Dataset) BuildOverviews(
 	cOverviewList := IntSliceToCInt(overviewList[:nOverviews])
 	cBandList := IntSliceToCInt(bandList[:nBands])
 
-	arg := &goGDALProgressFuncProxyArgs{progress, data}
+	callback := newGoGDALProgressCallback(progress, data)
+	defer callback.close()
 
 	return ErrFromCPLErr(C.GDALBuildOverviews(
 		dataset.cval,
@@ -1527,8 +1557,8 @@ func (dataset Dataset) BuildOverviews(
 		cIntSlicePtr(cOverviewList),
 		C.int(nBands),
 		cIntSlicePtr(cBandList),
-		C.goGDALProgressFuncProxyB(),
-		unsafe.Pointer(arg),
+		callback.fn,
+		callback.arg,
 	))
 }
 
@@ -1557,7 +1587,8 @@ func (dataset Dataset) CopyWholeRaster(
 	progress ProgressFunc,
 	data interface{},
 ) error {
-	arg := &goGDALProgressFuncProxyArgs{progress, data}
+	callback := newGoGDALProgressCallback(progress, data)
+	defer callback.close()
 
 	length := len(options)
 	cOptions := make([]*C.char, length+1)
@@ -1571,8 +1602,8 @@ func (dataset Dataset) CopyWholeRaster(
 		dataset.cval,
 		destDataset.cval,
 		(**C.char)(unsafe.Pointer(&cOptions[0])),
-		C.goGDALProgressFuncProxyB(),
-		unsafe.Pointer(arg),
+		callback.fn,
+		callback.arg,
 	))
 }
 
@@ -1783,7 +1814,8 @@ func (rasterBand RasterBand) ComputeStatistics(
 	progress ProgressFunc,
 	data interface{},
 ) (min, max, mean, stdDev float64) {
-	arg := &goGDALProgressFuncProxyArgs{progress, data}
+	callback := newGoGDALProgressCallback(progress, data)
+	defer callback.close()
 
 	C.GDALComputeRasterStatistics(
 		rasterBand.cval,
@@ -1792,8 +1824,8 @@ func (rasterBand RasterBand) ComputeStatistics(
 		(*C.double)(unsafe.Pointer(&max)),
 		(*C.double)(unsafe.Pointer(&mean)),
 		(*C.double)(unsafe.Pointer(&stdDev)),
-		C.goGDALProgressFuncProxyB(),
-		unsafe.Pointer(arg),
+		callback.fn,
+		callback.arg,
 	)
 	return min, max, mean, stdDev
 }
@@ -1874,9 +1906,8 @@ func (rasterBand RasterBand) Histogram(
 		return nil, fmt.Errorf("histogram bucket count must be greater than zero")
 	}
 
-	arg := &goGDALProgressFuncProxyArgs{
-		progress, data,
-	}
+	callback := newGoGDALProgressCallback(progress, data)
+	defer callback.close()
 
 	histogram := make([]C.GUIntBig, buckets)
 
@@ -1888,8 +1919,8 @@ func (rasterBand RasterBand) Histogram(
 		(*C.GUIntBig)(unsafe.Pointer(&histogram[0])),
 		C.int(includeOutOfRange),
 		C.int(approxOK),
-		C.goGDALProgressFuncProxyB(),
-		unsafe.Pointer(arg),
+		callback.fn,
+		callback.arg,
 	)); err != nil {
 		return nil, err
 	}
@@ -1902,9 +1933,8 @@ func (rasterBand RasterBand) DefaultHistogram(
 	progress ProgressFunc,
 	data interface{},
 ) (min, max float64, buckets int, histogram []int, err error) {
-	arg := &goGDALProgressFuncProxyArgs{
-		progress, data,
-	}
+	callback := newGoGDALProgressCallback(progress, data)
+	defer callback.close()
 
 	var cHistogram *C.GUIntBig
 	var cBuckets C.int
@@ -1916,8 +1946,8 @@ func (rasterBand RasterBand) DefaultHistogram(
 		&cBuckets,
 		&cHistogram,
 		C.int(force),
-		C.goGDALProgressFuncProxyB(),
-		unsafe.Pointer(arg),
+		callback.fn,
+		callback.arg,
 	))
 	buckets = int(cBuckets)
 	histogram = copyCUIntBigArray(cHistogram, cBuckets)
@@ -1980,7 +2010,8 @@ func (rasterBand RasterBand) RasterBandCopyWholeRaster(
 	progress ProgressFunc,
 	data interface{},
 ) error {
-	arg := &goGDALProgressFuncProxyArgs{progress, data}
+	callback := newGoGDALProgressCallback(progress, data)
+	defer callback.close()
 
 	length := len(options)
 	cOptions := make([]*C.char, length+1)
@@ -1994,8 +2025,8 @@ func (rasterBand RasterBand) RasterBandCopyWholeRaster(
 		rasterBand.cval,
 		destRaster.cval,
 		(**C.char)(unsafe.Pointer(&cOptions[0])),
-		C.goGDALProgressFuncProxyB(),
-		unsafe.Pointer(arg),
+		callback.fn,
+		callback.arg,
 	))
 }
 

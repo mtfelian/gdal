@@ -22,9 +22,8 @@ func ComputeMedianCutPCT(
 	progress ProgressFunc,
 	data interface{},
 ) int {
-	arg := &goGDALProgressFuncProxyArgs{
-		progress, data,
-	}
+	callback := newGoGDALProgressCallback(progress, data)
+	defer callback.close()
 
 	err := C.GDALComputeMedianCutPCT(
 		red.cval,
@@ -33,8 +32,8 @@ func ComputeMedianCutPCT(
 		nil,
 		C.int(colors),
 		ct.cval,
-		C.goGDALProgressFuncProxyB(),
-		unsafe.Pointer(arg),
+		callback.fn,
+		callback.arg,
 	)
 	return int(err)
 }
@@ -46,9 +45,8 @@ func DitherRGB2PCT(
 	progress ProgressFunc,
 	data interface{},
 ) int {
-	arg := &goGDALProgressFuncProxyArgs{
-		progress, data,
-	}
+	callback := newGoGDALProgressCallback(progress, data)
+	defer callback.close()
 
 	err := C.GDALDitherRGB2PCT(
 		red.cval,
@@ -56,8 +54,8 @@ func DitherRGB2PCT(
 		blue.cval,
 		target.cval,
 		ct.cval,
-		C.goGDALProgressFuncProxyB(),
-		unsafe.Pointer(arg),
+		callback.fn,
+		callback.arg,
 	)
 	return int(err)
 }
@@ -76,9 +74,8 @@ func (rb RasterBand) ComputeProximity(
 	progress ProgressFunc,
 	data interface{},
 ) error {
-	arg := &goGDALProgressFuncProxyArgs{
-		progress, data,
-	}
+	callback := newGoGDALProgressCallback(progress, data)
+	defer callback.close()
 
 	length := len(options)
 	opts := make([]*C.char, length+1)
@@ -92,8 +89,8 @@ func (rb RasterBand) ComputeProximity(
 		rb.cval,
 		dest.cval,
 		(**C.char)(unsafe.Pointer(&opts[0])),
-		C.goGDALProgressFuncProxyB(),
-		unsafe.Pointer(arg),
+		callback.fn,
+		callback.arg,
 	))
 }
 
@@ -107,9 +104,8 @@ func (rb RasterBand) FillNoData(
 	progress ProgressFunc,
 	data interface{},
 ) error {
-	arg := &goGDALProgressFuncProxyArgs{
-		progress, data,
-	}
+	callback := newGoGDALProgressCallback(progress, data)
+	defer callback.close()
 
 	length := len(options)
 	opts := make([]*C.char, length+1)
@@ -126,8 +122,8 @@ func (rb RasterBand) FillNoData(
 		0,
 		C.int(iterations),
 		(**C.char)(unsafe.Pointer(&opts[0])),
-		C.goGDALProgressFuncProxyB(),
-		unsafe.Pointer(arg),
+		callback.fn,
+		callback.arg,
 	))
 }
 
@@ -140,9 +136,8 @@ func (rb RasterBand) Polygonize(
 	progress ProgressFunc,
 	data interface{},
 ) error {
-	arg := &goGDALProgressFuncProxyArgs{
-		progress, data,
-	}
+	callback := newGoGDALProgressCallback(progress, data)
+	defer callback.close()
 
 	length := len(options)
 	opts := make([]*C.char, length+1)
@@ -158,8 +153,8 @@ func (rb RasterBand) Polygonize(
 		layer.cval,
 		C.int(fieldIndex),
 		(**C.char)(unsafe.Pointer(&opts[0])),
-		C.goGDALProgressFuncProxyB(),
-		unsafe.Pointer(arg),
+		callback.fn,
+		callback.arg,
 	))
 }
 
@@ -172,9 +167,8 @@ func (rb RasterBand) FPolygonize(
 	progress ProgressFunc,
 	data interface{},
 ) error {
-	arg := &goGDALProgressFuncProxyArgs{
-		progress, data,
-	}
+	callback := newGoGDALProgressCallback(progress, data)
+	defer callback.close()
 
 	length := len(options)
 	opts := make([]*C.char, length+1)
@@ -190,8 +184,8 @@ func (rb RasterBand) FPolygonize(
 		layer.cval,
 		C.int(fieldIndex),
 		(**C.char)(unsafe.Pointer(&opts[0])),
-		C.goGDALProgressFuncProxyB(),
-		unsafe.Pointer(arg),
+		callback.fn,
+		callback.arg,
 	))
 }
 
@@ -203,9 +197,8 @@ func (rb RasterBand) SieveFilter(
 	progress ProgressFunc,
 	data interface{},
 ) error {
-	arg := &goGDALProgressFuncProxyArgs{
-		progress, data,
-	}
+	callback := newGoGDALProgressCallback(progress, data)
+	defer callback.close()
 
 	length := len(options)
 	opts := make([]*C.char, length+1)
@@ -222,8 +215,8 @@ func (rb RasterBand) SieveFilter(
 		C.int(threshold),
 		C.int(connectedness),
 		(**C.char)(unsafe.Pointer(&opts[0])),
-		C.goGDALProgressFuncProxyB(),
-		unsafe.Pointer(arg),
+		callback.fn,
+		callback.arg,
 	))
 }
 
@@ -515,7 +508,8 @@ func GridCreate(
 	}
 
 	buffer := make([]float64, nX*nY)
-	arg := &goGDALProgressFuncProxyArgs{progress, data}
+	callback := newGoGDALProgressCallback(progress, data)
+	defer callback.close()
 	err := ErrFromCPLErr(C.GDALGridCreate(
 		C.GDALGridAlgorithm(algorithm),
 		poptions,
@@ -531,8 +525,8 @@ func GridCreate(
 		C.uint(nY),
 		C.GDALDataType(Float64),
 		unsafe.Pointer(float64SlicePtr(buffer)),
-		C.goGDALProgressFuncProxyB(),
-		unsafe.Pointer(arg),
+		callback.fn,
+		callback.arg,
 	))
 	return buffer, err
 }

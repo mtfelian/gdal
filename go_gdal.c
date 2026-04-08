@@ -12,8 +12,8 @@ static int goGDALProgressFuncProxyB_(
 	const char *message, 
 	void *progressArg
 ) {
-	GoInterface* args = (GoInterface*)progressArg;
-	int returnVal = goGDALProgressFuncProxyA(complete, (char*)message, args);
+	uintptr_t handle = (uintptr_t)progressArg;
+	int returnVal = goGDALProgressFuncProxyA(complete, (char*)message, handle);
 	return (int)returnVal;
 }
 

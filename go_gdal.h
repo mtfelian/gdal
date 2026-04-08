@@ -12,10 +12,16 @@
 #include <gdalwarper.h>
 #include <cpl_conv.h>
 #include <ogr_srs_api.h>
+#include <stdint.h>
 #include <string.h>
 
 // transform GDALProgressFunc to go func
 GDALProgressFunc goGDALProgressFuncProxyB();
+
+static inline void* goGDALProgressFuncProxyArg(uintptr_t handle)
+{
+    return (void*)handle;
+}
 
 static inline GDALGridInverseDistanceToAPowerOptions goGDALGridInverseDistanceToAPowerOptionsInit()
 {
