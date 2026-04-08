@@ -13,11 +13,13 @@ import (
 /*      Spatial reference functions.                                    */
 /* -------------------------------------------------------------------- */
 
+// SpatialReference wraps OGRSpatialReferenceH.
 type SpatialReference struct {
 	cval C.OGRSpatialReferenceH
 }
 
-// Create a new SpatialReference
+// CreateSpatialReference creates a new spatial reference, optionally seeded
+// from WKT.
 func CreateSpatialReference(wkt string) SpatialReference {
 	cString := C.CString(wkt)
 	defer C.free(unsafe.Pointer(cString))
@@ -25,14 +27,14 @@ func CreateSpatialReference(wkt string) SpatialReference {
 	return SpatialReference{sr}
 }
 
-// Initialize SRS based on WKT string
+// FromWKT initializes sr from WKT.
 func (sr SpatialReference) FromWKT(wkt string) error {
 	cString := C.CString(wkt)
 	defer C.free(unsafe.Pointer(cString))
 	return ErrFromOGRErr(C.OSRImportFromWkt(sr.cval, &cString))
 }
 
-// Export coordinate system to WKT
+// ToWKT exports sr as WKT.
 func (sr SpatialReference) ToWKT() (string, error) {
 	var p *C.char
 	err := ErrFromOGRErr(C.OSRExportToWkt(sr.cval, &p))
@@ -40,7 +42,7 @@ func (sr SpatialReference) ToWKT() (string, error) {
 	return wkt, err
 }
 
-// Export coordinate system to a nicely formatted WKT string
+// ToPrettyWKT exports sr as formatted WKT.
 func (sr SpatialReference) ToPrettyWKT(simplify bool) (string, error) {
 	var p *C.char
 	err := ErrFromOGRErr(C.OSRExportToPrettyWkt(
@@ -50,63 +52,63 @@ func (sr SpatialReference) ToPrettyWKT(simplify bool) (string, error) {
 	return wkt, err
 }
 
-// Initialize SRS based on EPSG code
+// FromEPSG initializes sr from an EPSG code.
 func (sr SpatialReference) FromEPSG(code int) error {
 	return ErrFromOGRErr(C.OSRImportFromEPSG(sr.cval, C.int(code)))
 }
 
-// Initialize SRS based on EPSG code, using EPSG lat/long ordering
+// FromEPSGA initializes sr from an EPSG code using EPSG axis ordering.
 func (sr SpatialReference) FromEPSGA(code int) error {
 	return ErrFromOGRErr(C.OSRImportFromEPSGA(sr.cval, C.int(code)))
 }
 
-// Destroy the spatial reference
+// Destroy releases sr.
 func (sr SpatialReference) Destroy() {
 	C.OSRDestroySpatialReference(sr.cval)
 }
 
-// Make a duplicate of this spatial reference
+// Clone returns a copy of sr.
 func (sr SpatialReference) Clone() SpatialReference {
 	newSR := C.OSRClone(sr.cval)
 	return SpatialReference{newSR}
 }
 
-// Make a duplicate of the GEOGCS node of this spatial reference
+// CloneGeogCS returns a copy of the geographic coordinate system in sr.
 func (sr SpatialReference) CloneGeogCS() SpatialReference {
 	newSR := C.OSRCloneGeogCS(sr.cval)
 	return SpatialReference{newSR}
 }
 
-// Increments the reference count by one, returning reference count
+// Reference increments and returns sr's reference count.
 func (sr SpatialReference) Reference() int {
 	count := C.OSRReference(sr.cval)
 	return int(count)
 }
 
-// Decrements the reference count by one, returning reference count
+// Dereference decrements and returns sr's reference count.
 func (sr SpatialReference) Dereference() int {
 	count := C.OSRDereference(sr.cval)
 	return int(count)
 }
 
-// Decrements the reference count by one and destroy if zero
+// Release decrements sr's reference count and destroys it when it reaches zero.
 func (sr SpatialReference) Release() {
 	C.OSRRelease(sr.cval)
 }
 
-// Validate spatial reference tokens
+// Validate reports whether sr contains a valid spatial reference definition.
 func (sr SpatialReference) Validate() error {
 	return ErrFromOGRErr(C.OSRValidate(sr.cval))
 }
 
-// Import PROJ.4 coordinate string
+// FromProj4 initializes sr from a PROJ string.
 func (sr SpatialReference) FromProj4(input string) error {
 	cString := C.CString(input)
 	defer C.free(unsafe.Pointer(cString))
 	return ErrFromOGRErr(C.OSRImportFromProj4(sr.cval, cString))
 }
 
-// Export coordinate system in PROJ.4 format
+// ToProj4 exports sr as a PROJ string.
 func (sr SpatialReference) ToProj4() (string, error) {
 	var p *C.char
 	err := ErrFromOGRErr(C.OSRExportToProj4(sr.cval, &p))
@@ -114,14 +116,14 @@ func (sr SpatialReference) ToProj4() (string, error) {
 	return proj4, err
 }
 
-// Import coordinate system from ESRI .prj formats
+// FromESRI initializes sr from an ESRI projection string.
 func (sr SpatialReference) FromESRI(input string) error {
 	cString := C.CString(input)
 	defer C.free(unsafe.Pointer(cString))
 	return ErrFromOGRErr(C.OSRImportFromProj4(sr.cval, cString))
 }
 
-// Import coordinate system from PCI projection definition
+// FromPCI initializes sr from a PCI projection definition.
 func (sr SpatialReference) FromPCI(proj, units string, params []float64) error {
 	cProj := C.CString(proj)
 	defer C.free(unsafe.Pointer(cProj))
@@ -136,7 +138,7 @@ func (sr SpatialReference) FromPCI(proj, units string, params []float64) error {
 	))
 }
 
-// Import coordinate system from USGS projection definition
+// FromUSGS initializes sr from a USGS projection definition.
 func (sr SpatialReference) FromUSGS(projsys, zone int, params []float64, datum int) error {
 	return ErrFromOGRErr(C.OSRImportFromUSGS(
 		sr.cval,
@@ -147,14 +149,14 @@ func (sr SpatialReference) FromUSGS(projsys, zone int, params []float64, datum i
 	))
 }
 
-// Import coordinate system from XML format (GML only currently)
+// FromXML initializes sr from XML, currently limited to GML.
 func (sr SpatialReference) FromXML(xml string) error {
 	cXml := C.CString(xml)
 	defer C.free(unsafe.Pointer(cXml))
 	return ErrFromOGRErr(C.OSRImportFromXML(sr.cval, cXml))
 }
 
-// Import coordinate system from ERMapper projection definitions
+// FromERM initializes sr from an ERMapper projection definition.
 func (sr SpatialReference) FromERM(proj, datum, units string) error {
 	cProj := C.CString(proj)
 	defer C.free(unsafe.Pointer(cProj))
@@ -166,20 +168,22 @@ func (sr SpatialReference) FromERM(proj, datum, units string) error {
 	return ErrFromOGRErr(C.OSRImportFromERM(sr.cval, cProj, cDatum, cUnits))
 }
 
-// Import coordinate system from a URL
+// FromURL initializes sr from a URL-backed definition.
 func (sr SpatialReference) FromURL(url string) error {
 	cURL := C.CString(url)
 	defer C.free(unsafe.Pointer(cURL))
 	return ErrFromOGRErr(C.OSRImportFromXML(sr.cval, cURL))
 }
 
-// Export coordinate system in PCI format
+// ToPCI exports sr as a PCI projection definition.
 func (sr SpatialReference) ToPCI() (proj, units string, params []float64, errVal error) {
 	var p, u *C.char
 	var cParams *C.double
 	err := ErrFromOGRErr(C.OSRExportToPCI(
 		sr.cval, &p, &u, &cParams,
 	))
+	// GDAL allocates cParams for the caller, so copy it into Go memory before
+	// releasing the native buffer.
 	params = copyCDoubleArray(cParams, 17)
 	C.CPLFree(unsafe.Pointer(cParams))
 	defer C.free(unsafe.Pointer(p))
@@ -187,7 +191,7 @@ func (sr SpatialReference) ToPCI() (proj, units string, params []float64, errVal
 	return C.GoString(p), C.GoString(u), params, err
 }
 
-// Export coordinate system to USGS GCTP projection definition
+// ToUSGS exports sr as a USGS GCTP projection definition.
 func (sr SpatialReference) ToUSGS() (proj, zone int, params []float64, datum int, errVal error) {
 	var cProj, cZone, cDatum C.long
 	var cParams *C.double
@@ -198,6 +202,8 @@ func (sr SpatialReference) ToUSGS() (proj, zone int, params []float64, datum int
 		&cParams,
 		&cDatum,
 	))
+	// GDAL allocates cParams for the caller, so copy it into Go memory before
+	// releasing the native buffer.
 	params = copyCDoubleArray(cParams, 15)
 	C.CPLFree(unsafe.Pointer(cParams))
 	proj = int(cProj)
@@ -207,7 +213,7 @@ func (sr SpatialReference) ToUSGS() (proj, zone int, params []float64, datum int
 	return proj, zone, params, datum, err
 }
 
-// Export coordinate system in XML format
+// ToXML exports sr as XML.
 func (sr SpatialReference) ToXML() (xml string, errVal error) {
 	var x *C.char
 	err := ErrFromOGRErr(C.OSRExportToXML(sr.cval, &x, nil))
@@ -215,7 +221,7 @@ func (sr SpatialReference) ToXML() (xml string, errVal error) {
 	return C.GoString(x), err
 }
 
-// Export coordinate system in Mapinfo style CoordSys format
+// ToMICoordSys exports sr in MapInfo CoordSys format.
 func (sr SpatialReference) ToMICoordSys() (output string, errVal error) {
 	var x *C.char
 	err := ErrFromOGRErr(C.OSRExportToMICoordSys(sr.cval, &x))

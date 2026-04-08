@@ -1,3 +1,4 @@
+//go:build (linux && amd64) || (darwin && amd64)
 // +build linux,amd64 darwin,amd64
 
 package gdal

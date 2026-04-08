@@ -1,24 +1,31 @@
 /*
-Package gdal provides a wrapper for GDAL, the Geospatial Data Abstraction Library.  This C/C++ library provides access to a large number of geospatial raster data formats.  It also contains a wrapper for the related OGR Simple Feature Library which provides similar functionality for vector formats.
+Package gdal wraps GDAL, the Geospatial Data Abstraction Library.
+
+GDAL provides access to a large number of geospatial raster data formats.
+This package also wraps the related OGR Simple Feature Library, which
+provides similar functionality for vector formats.
 
 # Limitations
 
-Some less oftenly used functions are not yet implemented.  The majoriry of these involve style tables, asynchronous I/O, and GCPs.
+Some less commonly used functions are not yet implemented. Most of the
+missing pieces involve style tables, asynchronous I/O, and GCPs.
 
-The documentation is fairly limited, but the functionality fairly closely matches that of the C++ api.
+The documentation is limited, but the exposed functionality closely follows
+the GDAL C API.
 
-This wrapper has most recently been tested on Windows7, using the MinGW32_x64 compiler and GDAL version 1.11.
+This wrapper was originally tested on Windows 7 with the MinGW32_x64
+compiler and GDAL 1.11.
 
 # Usage
 
-A simple program to create a georeferenced blank 256x256 GeoTIFF:
+A simple program that creates a georeferenced blank 256x256 GeoTIFF:
 
 	package main
 
 	import (
 		"fmt"
 		"flag"
-		gdal "github.com/mtfelian/gdal "
+		gdal "github.com/mtfelian/gdal"
 	)
 
 	func main() {
@@ -48,6 +55,6 @@ A simple program to create a georeferenced blank 256x256 GeoTIFF:
 		raster.IO(gdal.Write, 0, 0, 256, 256, buffer, 256, 256, 0, 0)
 	}
 
-More examples can be found in the ./examples subdirectory.
+More examples are available in the ./examples subdirectory.
 */
 package gdal

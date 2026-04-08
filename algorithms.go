@@ -7,17 +7,14 @@ package gdal
 import "C"
 import (
 	"errors"
-	"fmt"
 	"unsafe"
 )
-
-var _ = fmt.Println
 
 /* --------------------------------------------- */
 /* Misc functions                                */
 /* --------------------------------------------- */
 
-// Compute optimal PCT for RGB image
+// ComputeMedianCutPCT computes an optimal pseudocolor table for an RGB image.
 func ComputeMedianCutPCT(
 	red, green, blue RasterBand,
 	colors int,
@@ -42,7 +39,7 @@ func ComputeMedianCutPCT(
 	return int(err)
 }
 
-// 24bit to 8bit conversion with dithering
+// DitherRGB2PCT converts a 24-bit RGB image to an 8-bit pseudocolor image.
 func DitherRGB2PCT(
 	red, green, blue, target RasterBand,
 	ct ColorTable,
@@ -65,13 +62,14 @@ func DitherRGB2PCT(
 	return int(err)
 }
 
-// Compute checksum for image region
+// Checksum computes a checksum for the requested image region.
 func (rb RasterBand) Checksum(xOff, yOff, xSize, ySize int) int {
 	sum := C.GDALChecksumImage(rb.cval, C.int(xOff), C.int(yOff), C.int(xSize), C.int(ySize))
 	return int(sum)
 }
 
-// Compute the proximity of all pixels in the image to a set of pixels in the source image
+// ComputeProximity computes the proximity of all pixels in dest to selected
+// pixels in src.
 func (src RasterBand) ComputeProximity(
 	dest RasterBand,
 	options []string,
@@ -99,7 +97,8 @@ func (src RasterBand) ComputeProximity(
 	))
 }
 
-// Fill selected raster regions by interpolation from the edges
+// FillNoData fills selected raster regions by interpolating from surrounding
+// pixels.
 func (src RasterBand) FillNoData(
 	mask RasterBand,
 	distance float64,

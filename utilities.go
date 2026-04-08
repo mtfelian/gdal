@@ -10,14 +10,11 @@ import (
 	"unsafe"
 )
 
-var _ = fmt.Println
-
 /* --------------------------------------------- */
 /* Command line utility wrapper functions        */
 /* --------------------------------------------- */
 
-// gdalwarp
-
+// stringArrayContains reports whether needle is present in array.
 func stringArrayContains(array []string, needle string) bool {
 	for _, s := range array {
 		if s == needle {
@@ -27,6 +24,7 @@ func stringArrayContains(array []string, needle string) bool {
 	return false
 }
 
+// prependOptionIfMissing prepends a flag/value pair when the flag is absent.
 func prependOptionIfMissing(options []string, flag, value string) []string {
 	if stringArrayContains(options, flag) {
 		return options
@@ -34,14 +32,22 @@ func prependOptionIfMissing(options []string, flag, value string) []string {
 	return append([]string{flag, value}, options...)
 }
 
+// ensureRasterOutputFormatOptions defaults command-style options to the MEM
+// driver when no explicit output format was provided.
 func ensureRasterOutputFormatOptions(options []string) []string {
 	return prependOptionIfMissing(options, "-of", "MEM")
 }
 
+// ensureVectorOutputFormatOptions defaults command-style options to the Memory
+// driver when no explicit output format was provided.
 func ensureVectorOutputFormatOptions(options []string) []string {
 	return prependOptionIfMissing(options, "-f", "MEM")
 }
 
+// Warp wraps the gdalwarp utility API.
+//
+// When dstDS and destDS are both empty, Warp creates an in-memory dataset and
+// injects the MEM output format when the caller did not specify one.
 func Warp(dstDS string, destDS *Dataset, sourceDS []Dataset, options []string) (Dataset, error) {
 	if len(sourceDS) == 0 {
 		return Dataset{}, fmt.Errorf("warp requires at least one source dataset")
@@ -81,9 +87,12 @@ func Warp(dstDS string, destDS *Dataset, sourceDS []Dataset, options []string) (
 		return Dataset{}, fmt.Errorf("warp failed with code %d", cerr)
 	}
 	return Dataset{ds}, nil
-
 }
 
+// Translate wraps the gdal_translate utility API.
+//
+// When dstDS is empty, Translate creates an in-memory dataset and injects the
+// MEM output format when the caller did not specify one.
 func Translate(dstDS string, sourceDS Dataset, options []string) (Dataset, error) {
 	if dstDS == "" {
 		dstDS = "MEM:::"
@@ -111,9 +120,12 @@ func Translate(dstDS string, sourceDS Dataset, options []string) (Dataset, error
 		return Dataset{}, fmt.Errorf("translate failed with code %d", cerr)
 	}
 	return Dataset{ds}, nil
-
 }
 
+// VectorTranslate wraps the ogr2ogr-style vector translation API.
+//
+// When dstDS is empty, VectorTranslate creates an in-memory dataset and
+// injects the Memory output format when the caller did not specify one.
 func VectorTranslate(dstDS string, sourceDS []Dataset, options []string) (Dataset, error) {
 	if len(sourceDS) == 0 {
 		return Dataset{}, fmt.Errorf("vector translate requires at least one source dataset")
@@ -150,9 +162,12 @@ func VectorTranslate(dstDS string, sourceDS []Dataset, options []string) (Datase
 		return Dataset{}, fmt.Errorf("vector translate failed with code %d", cerr)
 	}
 	return Dataset{ds}, nil
-
 }
 
+// Rasterize wraps the gdal_rasterize utility API.
+//
+// When dstDS is empty, Rasterize creates an in-memory dataset and injects the
+// MEM output format when the caller did not specify one.
 func Rasterize(dstDS string, sourceDS Dataset, options []string) (Dataset, error) {
 	if dstDS == "" {
 		dstDS = "MEM:::"
@@ -182,6 +197,10 @@ func Rasterize(dstDS string, sourceDS Dataset, options []string) (Dataset, error
 	return Dataset{ds}, nil
 }
 
+// DEMProcessing wraps the gdaldem utility API.
+//
+// When dstDS is empty, DEMProcessing creates an in-memory dataset and injects
+// the MEM output format when the caller did not specify one.
 func DEMProcessing(dstDS string, sourceDS Dataset, processing string, colorFileName string, options []string) (Dataset, error) {
 	if dstDS == "" {
 		dstDS = "MEM:::"
@@ -219,6 +238,7 @@ func DEMProcessing(dstDS string, sourceDS Dataset, processing string, colorFileN
 	return Dataset{ds}, nil
 }
 
+// ContourGenerate wraps GDALContourGenerateEx.
 func ContourGenerate(band RasterBand, layer Layer, options []string, progress ProgressFunc, data interface{}) error {
 	var opts **C.char
 	if options != nil {

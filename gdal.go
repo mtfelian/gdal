@@ -563,7 +563,7 @@ func (paletteInterp PaletteInterp) Name() string {
 	return C.GoString(C.GDALGetPaletteInterpretationName(C.GDALPaletteInterp(paletteInterp)))
 }
 
-// "well known" metadata items.
+// Well-known metadata items.
 const (
 	MD_AREA_OR_POINT = string(C.GDALMD_AREA_OR_POINT)
 	MD_AOP_AREA      = string(C.GDALMD_AOP_AREA)
@@ -574,38 +574,48 @@ const (
 /*      Define handle types related to various internal classes.        */
 /* -------------------------------------------------------------------- */
 
+// MajorObject wraps GDAL objects that expose shared description and metadata
+// APIs.
 type MajorObject struct {
 	cval C.GDALMajorObjectH
 }
 
+// Dataset wraps GDALDatasetH.
 type Dataset struct {
 	cval C.GDALDatasetH
 }
 
+// RasterBand wraps GDALRasterBandH.
 type RasterBand struct {
 	cval C.GDALRasterBandH
 }
 
+// Driver wraps GDALDriverH.
 type Driver struct {
 	cval C.GDALDriverH
 }
 
+// ColorTable wraps GDALColorTableH.
 type ColorTable struct {
 	cval C.GDALColorTableH
 }
 
+// RasterAttributeTable wraps GDALRasterAttributeTableH.
 type RasterAttributeTable struct {
 	cval C.GDALRasterAttributeTableH
 }
 
+// AsyncReader wraps GDALAsyncReaderH.
 type AsyncReader struct {
 	cval C.GDALAsyncReaderH
 }
 
+// ColorEntry wraps GDALColorEntry.
 type ColorEntry struct {
 	cval C.GDALColorEntry
 }
 
+// Set assigns the color components for ce.
 func (ce *ColorEntry) Set(c1, c2, c3, c4 uint) {
 	ce.cval.c1 = C.short(c1)
 	ce.cval.c2 = C.short(c2)
@@ -613,11 +623,12 @@ func (ce *ColorEntry) Set(c1, c2, c3, c4 uint) {
 	ce.cval.c4 = C.short(c4)
 }
 
+// Get returns the color components stored in ce.
 func (ce *ColorEntry) Get() (c1, c2, c3, c4 uint8) {
-
 	return *(*uint8)(unsafe.Pointer(&ce.cval.c1)), *(*uint8)(unsafe.Pointer(&ce.cval.c2)), *(*uint8)(unsafe.Pointer(&ce.cval.c3)), *(*uint8)(unsafe.Pointer(&ce.cval.c4))
 }
 
+// VSILFILE wraps VSILFILE.
 type VSILFILE struct {
 	cval *C.VSILFILE
 }
@@ -626,8 +637,10 @@ type VSILFILE struct {
 /*      Callback "progress" function.                                   */
 /* -------------------------------------------------------------------- */
 
+// ProgressFunc reports operation progress to GDAL-compatible callbacks.
 type ProgressFunc func(complete float64, message string, progressArg interface{}) int
 
+// DummyProgress forwards to GDALDummyProgress.
 func DummyProgress(complete float64, message string, data interface{}) int {
 	msg := C.CString(message)
 	defer C.free(unsafe.Pointer(msg))
@@ -636,6 +649,7 @@ func DummyProgress(complete float64, message string, data interface{}) int {
 	return int(retval)
 }
 
+// TermProgress forwards to GDALTermProgress.
 func TermProgress(complete float64, message string, data interface{}) int {
 	msg := C.CString(message)
 	defer C.free(unsafe.Pointer(msg))
@@ -644,6 +658,7 @@ func TermProgress(complete float64, message string, data interface{}) int {
 	return int(retval)
 }
 
+// ScaledProgress forwards to GDALScaledProgress.
 func ScaledProgress(complete float64, message string, data interface{}) int {
 	msg := C.CString(message)
 	defer C.free(unsafe.Pointer(msg))
@@ -652,11 +667,13 @@ func ScaledProgress(complete float64, message string, data interface{}) int {
 	return int(retval)
 }
 
+// CreateScaledProgress is not implemented.
 func CreateScaledProgress(min, max float64, progress ProgressFunc, data unsafe.Pointer) unsafe.Pointer {
 	panic("not implemented!")
 	return nil
 }
 
+// DestroyScaledProgress releases a progress object created by GDAL.
 func DestroyScaledProgress(data unsafe.Pointer) {
 	C.GDALDestroyScaledProgress(data)
 }
