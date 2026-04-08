@@ -1,7 +1,7 @@
-module github.com/mtfelian/gdal/examples/grid
+module github.com/mtfelian/gdal/v2/examples/grid
 
-go 1.13
+go 1.25
 
-replace github.com/mtfelian/gdal => ../..
+replace github.com/mtfelian/gdal/v2 => ../..
 
-require github.com/mtfelian/gdal v0.0.0-00010101000000-000000000000
+require github.com/mtfelian/gdal/v2 v2.0.0

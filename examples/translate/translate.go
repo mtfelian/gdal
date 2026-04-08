@@ -6,7 +6,7 @@ import (
 	"log"
 	"strings"
 
-	"github.com/mtfelian/gdal"
+	"github.com/mtfelian/gdal/v2"
 )
 
 func main() {
@@ -31,6 +31,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer ds.Close()
 
 	outputDs, err := gdal.Translate(outputFile, ds, options)
 	if err != nil {

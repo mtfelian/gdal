@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/mtfelian/gdal"
+	"github.com/mtfelian/gdal/v2"
 )
 
 func readFile(filename string) (x, y, z []float64, err error) {
@@ -18,7 +18,7 @@ func readFile(filename string) (x, y, z []float64, err error) {
 	if b, err = ioutil.ReadFile(filename); err != nil {
 		return
 	}
-	arr := strings.Split(string(b), "\n")
+	arr := strings.Split(strings.TrimSpace(string(b)), "\n")
 	x, y, z = make([]float64, len(arr)), make([]float64, len(arr)), make([]float64, len(arr))
 	for i, el := range arr {
 		xyz := strings.Split(el, ",")
@@ -26,13 +26,13 @@ func readFile(filename string) (x, y, z []float64, err error) {
 			err = errors.New("wrong input file format, should be CSV with 3 columns: y,x,z")
 		}
 
-		if y[i], err = strconv.ParseFloat(xyz[0], 64); err != nil {
+		if y[i], err = strconv.ParseFloat(strings.TrimSpace(xyz[0]), 64); err != nil {
 			return
 		}
-		if x[i], err = strconv.ParseFloat(xyz[1], 64); err != nil {
+		if x[i], err = strconv.ParseFloat(strings.TrimSpace(xyz[1]), 64); err != nil {
 			return
 		}
-		if z[i], err = strconv.ParseFloat(xyz[2], 64); err != nil {
+		if z[i], err = strconv.ParseFloat(strings.TrimSpace(xyz[2]), 64); err != nil {
 			return
 		}
 	}
