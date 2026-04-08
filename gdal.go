@@ -18,6 +18,13 @@ func init() {
 	C.GDALAllRegister()
 }
 
+func goString(cstr *C.char) string {
+	if cstr == nil {
+		return ""
+	}
+	return C.GoString(cstr)
+}
+
 /* -------------------------------------------------------------------- */
 /*      Significant constants.                                          */
 /* -------------------------------------------------------------------- */
@@ -993,15 +1000,19 @@ func (dataset *Dataset) Metadata(domain string) []string {
 		C.GDALMajorObjectH(unsafe.Pointer(dataset.cval)),
 		cDomain,
 	)
+	if p == nil {
+		return nil
+	}
+
 	var strings []string
 	q := uintptr(unsafe.Pointer(p))
 	for {
-		p = (**C.char)(unsafe.Pointer(q))
-		if p == nil {
+		item := (**C.char)(unsafe.Pointer(q))
+		if *item == nil {
 			break
 		}
-		strings = append(strings, C.GoString(*p))
-		q += unsafe.Sizeof(q)
+		strings = append(strings, C.GoString(*item))
+		q += unsafe.Sizeof(p)
 	}
 
 	return strings
@@ -1069,7 +1080,7 @@ func (object *Driver) MetadataItem(name, domain string) string {
 	c_domain := C.CString(domain)
 	defer C.free(unsafe.Pointer(c_domain))
 
-	return C.GoString(
+	return goString(
 		C.GDALGetMetadataItem(
 			C.GDALMajorObjectH(unsafe.Pointer(object.cval)),
 			c_name, c_domain,
@@ -1083,7 +1094,7 @@ func (object *Dataset) MetadataItem(name, domain string) string {
 	c_domain := C.CString(domain)
 	defer C.free(unsafe.Pointer(c_domain))
 
-	return C.GoString(
+	return goString(
 		C.GDALGetMetadataItem(
 			C.GDALMajorObjectH(unsafe.Pointer(object.cval)),
 			c_name, c_domain,
@@ -1098,7 +1109,7 @@ func (object *RasterBand) MetadataItem(name, domain string) string {
 	c_domain := C.CString(domain)
 	defer C.free(unsafe.Pointer(c_domain))
 
-	return C.GoString(
+	return goString(
 		C.GDALGetMetadataItem(
 			C.GDALMajorObjectH(unsafe.Pointer(object.cval)),
 			c_name, c_domain,

@@ -440,76 +440,76 @@ func GridCreate(
 		if !ok {
 			return nil, errInvalidOptionsTypeWasPassed
 		}
-		poptions = unsafe.Pointer(&C.GDALGridInverseDistanceToAPowerOptions{
-			dfPower:           C.double(soptions.Power),
-			dfSmoothing:       C.double(soptions.Smoothing),
-			dfAnisotropyRatio: C.double(soptions.AnisotropyRatio),
-			dfAnisotropyAngle: C.double(soptions.AnisotropyAngle),
-			dfRadius1:         C.double(soptions.Radius1),
-			dfRadius2:         C.double(soptions.Radius2),
-			dfAngle:           C.double(soptions.Angle),
-			nMaxPoints:        C.uint(soptions.MaxPoints),
-			nMinPoints:        C.uint(soptions.MinPoints),
-			dfNoDataValue:     C.double(soptions.NoDataValue),
-		})
+		cOptions := C.goGDALGridInverseDistanceToAPowerOptionsInit()
+		cOptions.dfPower = C.double(soptions.Power)
+		cOptions.dfSmoothing = C.double(soptions.Smoothing)
+		cOptions.dfAnisotropyRatio = C.double(soptions.AnisotropyRatio)
+		cOptions.dfAnisotropyAngle = C.double(soptions.AnisotropyAngle)
+		cOptions.dfRadius1 = C.double(soptions.Radius1)
+		cOptions.dfRadius2 = C.double(soptions.Radius2)
+		cOptions.dfAngle = C.double(soptions.Angle)
+		cOptions.nMaxPoints = C.uint(soptions.MaxPoints)
+		cOptions.nMinPoints = C.uint(soptions.MinPoints)
+		cOptions.dfNoDataValue = C.double(soptions.NoDataValue)
+		poptions = unsafe.Pointer(&cOptions)
 	case GA_InverseDistanceToAPowerNearestNeighbor:
 		soptions, ok := options.(GridInverseDistanceToAPowerNearestNeighborOptions)
 		if !ok {
 			return nil, errInvalidOptionsTypeWasPassed
 		}
-		poptions = unsafe.Pointer(&C.GDALGridInverseDistanceToAPowerNearestNeighborOptions{
-			dfPower:       C.double(soptions.Power),
-			dfRadius:      C.double(soptions.Radius),
-			dfSmoothing:   C.double(soptions.Smoothing),
-			nMaxPoints:    C.uint(soptions.MaxPoints),
-			nMinPoints:    C.uint(soptions.MinPoints),
-			dfNoDataValue: C.double(soptions.NoDataValue),
-		})
+		cOptions := C.goGDALGridInverseDistanceToAPowerNearestNeighborOptionsInit()
+		cOptions.dfPower = C.double(soptions.Power)
+		cOptions.dfRadius = C.double(soptions.Radius)
+		cOptions.dfSmoothing = C.double(soptions.Smoothing)
+		cOptions.nMaxPoints = C.uint(soptions.MaxPoints)
+		cOptions.nMinPoints = C.uint(soptions.MinPoints)
+		cOptions.dfNoDataValue = C.double(soptions.NoDataValue)
+		poptions = unsafe.Pointer(&cOptions)
 	case GA_MovingAverage:
 		soptions, ok := options.(GridMovingAverageOptions)
 		if !ok {
 			return nil, errInvalidOptionsTypeWasPassed
 		}
-		poptions = unsafe.Pointer(&C.GDALGridMovingAverageOptions{
-			dfRadius1:     C.double(soptions.Radius1),
-			dfRadius2:     C.double(soptions.Radius2),
-			dfAngle:       C.double(soptions.Angle),
-			nMinPoints:    C.uint(soptions.MinPoints),
-			dfNoDataValue: C.double(soptions.NoDataValue),
-		})
+		cOptions := C.goGDALGridMovingAverageOptionsInit()
+		cOptions.dfRadius1 = C.double(soptions.Radius1)
+		cOptions.dfRadius2 = C.double(soptions.Radius2)
+		cOptions.dfAngle = C.double(soptions.Angle)
+		cOptions.nMinPoints = C.uint(soptions.MinPoints)
+		cOptions.dfNoDataValue = C.double(soptions.NoDataValue)
+		poptions = unsafe.Pointer(&cOptions)
 	case GA_NearestNeighbor:
 		soptions, ok := options.(GridNearestNeighborOptions)
 		if !ok {
 			return nil, errInvalidOptionsTypeWasPassed
 		}
-		poptions = unsafe.Pointer(&C.GDALGridNearestNeighborOptions{
-			dfRadius1:     C.double(soptions.Radius1),
-			dfRadius2:     C.double(soptions.Radius2),
-			dfAngle:       C.double(soptions.Angle),
-			dfNoDataValue: C.double(soptions.NoDataValue),
-		})
+		cOptions := C.goGDALGridNearestNeighborOptionsInit()
+		cOptions.dfRadius1 = C.double(soptions.Radius1)
+		cOptions.dfRadius2 = C.double(soptions.Radius2)
+		cOptions.dfAngle = C.double(soptions.Angle)
+		cOptions.dfNoDataValue = C.double(soptions.NoDataValue)
+		poptions = unsafe.Pointer(&cOptions)
 	case GA_MetricMinimum, GA_MetricMaximum, GA_MetricCount, GA_MetricRange,
 		GA_MetricAverageDistance, GA_MetricAverageDistancePts:
 		soptions, ok := options.(GridDataMetricsOptions)
 		if !ok {
 			return nil, errInvalidOptionsTypeWasPassed
 		}
-		poptions = unsafe.Pointer(&C.GDALGridDataMetricsOptions{
-			dfRadius1:     C.double(soptions.Radius1),
-			dfRadius2:     C.double(soptions.Radius2),
-			dfAngle:       C.double(soptions.Angle),
-			nMinPoints:    C.uint(soptions.MinPoints),
-			dfNoDataValue: C.double(soptions.NoDataValue),
-		})
+		cOptions := C.goGDALGridDataMetricsOptionsInit()
+		cOptions.dfRadius1 = C.double(soptions.Radius1)
+		cOptions.dfRadius2 = C.double(soptions.Radius2)
+		cOptions.dfAngle = C.double(soptions.Angle)
+		cOptions.nMinPoints = C.uint(soptions.MinPoints)
+		cOptions.dfNoDataValue = C.double(soptions.NoDataValue)
+		poptions = unsafe.Pointer(&cOptions)
 	case GA_Linear:
 		soptions, ok := options.(GridLinearOptions)
 		if !ok {
 			return nil, errInvalidOptionsTypeWasPassed
 		}
-		poptions = unsafe.Pointer(&C.GDALGridLinearOptions{
-			dfRadius:      C.double(soptions.Radius),
-			dfNoDataValue: C.double(soptions.NoDataValue),
-		})
+		cOptions := C.goGDALGridLinearOptionsInit()
+		cOptions.dfRadius = C.double(soptions.Radius)
+		cOptions.dfNoDataValue = C.double(soptions.NoDataValue)
+		poptions = unsafe.Pointer(&cOptions)
 	}
 
 	buffer := make([]float64, nX*nY)
