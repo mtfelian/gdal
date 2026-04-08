@@ -20,9 +20,10 @@ func init() {
 /*      Significant constants.                                          */
 /* -------------------------------------------------------------------- */
 
-// List of well known binary geometry types
+// GeometryType enumerates well known binary geometry types.
 type GeometryType uint32
 
+// GT_Unknown and related constants are exported GDAL/OGR symbols.
 const (
 	GT_Unknown               = GeometryType(C.wkbUnknown)
 	GT_Point                 = GeometryType(C.wkbPoint)
@@ -47,42 +48,52 @@ const (
 /*      Envelope functions                                              */
 /* -------------------------------------------------------------------- */
 
+// Envelope is an exported GDAL/OGR type.
 type Envelope struct {
 	cval C.OGREnvelope
 }
 
+// MinX wraps the corresponding GDAL/OGR operation.
 func (env Envelope) MinX() float64 {
 	return float64(env.cval.MinX)
 }
 
+// MaxX wraps the corresponding GDAL/OGR operation.
 func (env Envelope) MaxX() float64 {
 	return float64(env.cval.MaxX)
 }
 
+// MinY wraps the corresponding GDAL/OGR operation.
 func (env Envelope) MinY() float64 {
 	return float64(env.cval.MinY)
 }
 
+// MaxY wraps the corresponding GDAL/OGR operation.
 func (env Envelope) MaxY() float64 {
 	return float64(env.cval.MaxY)
 }
 
+// SetMinX wraps the corresponding GDAL/OGR operation.
 func (env *Envelope) SetMinX(val float64) {
 	env.cval.MinX = C.double(val)
 }
 
+// SetMaxX wraps the corresponding GDAL/OGR operation.
 func (env *Envelope) SetMaxX(val float64) {
 	env.cval.MaxX = C.double(val)
 }
 
+// SetMinY wraps the corresponding GDAL/OGR operation.
 func (env *Envelope) SetMinY(val float64) {
 	env.cval.MinY = C.double(val)
 }
 
+// SetMaxY wraps the corresponding GDAL/OGR operation.
 func (env *Envelope) SetMaxY(val float64) {
 	env.cval.MaxY = C.double(val)
 }
 
+// IsInit wraps the corresponding GDAL/OGR operation.
 func (env Envelope) IsInit() bool {
 	return env.cval.MinX != 0 || env.cval.MinY != 0 || env.cval.MaxX != 0 || env.cval.MaxY != 0
 }
@@ -101,7 +112,7 @@ func max(a, b C.double) C.double {
 	return b
 }
 
-// Return the union of this envelope with another one
+// Union returns the union of this envelope with another one.
 func (env Envelope) Union(other Envelope) Envelope {
 	if env.IsInit() {
 		env.cval.MinX = min(env.cval.MinX, other.cval.MinX)
@@ -117,7 +128,7 @@ func (env Envelope) Union(other Envelope) Envelope {
 	return env
 }
 
-// Return the intersection of this envelope with another
+// Intersect returns the intersection of this envelope with another.
 func (env Envelope) Intersect(other Envelope) Envelope {
 	if env.Intersects(other) {
 		if env.IsInit() {
@@ -140,7 +151,7 @@ func (env Envelope) Intersect(other Envelope) Envelope {
 	return env
 }
 
-// Test if one envelope intersects another
+// Intersects reports whether one envelope intersects another.
 func (env Envelope) Intersects(other Envelope) bool {
 	return env.cval.MinX <= other.cval.MaxX &&
 		env.cval.MaxX >= other.cval.MinX &&
@@ -148,7 +159,7 @@ func (env Envelope) Intersects(other Envelope) bool {
 		env.cval.MaxY >= other.cval.MinY
 }
 
-// Test if one envelope completely contains another
+// Contains reports whether one envelope completely contains another.
 func (env Envelope) Contains(other Envelope) bool {
 	return env.cval.MinX <= other.cval.MinX &&
 		env.cval.MaxX >= other.cval.MaxX &&
@@ -160,12 +171,12 @@ func (env Envelope) Contains(other Envelope) bool {
 /*      Misc functions                                                  */
 /* -------------------------------------------------------------------- */
 
-// Clean up all OGR related resources
+// CleanupOGR cleans up all OGR related resources.
 func CleanupOGR() {
 	C.OGRCleanupAll()
 }
 
-// Convert a go bool to a C int
+// BoolToCInt converts a go bool to a C int.
 func BoolToCInt(in bool) (out C.int) {
 	if in {
 		out = 1
@@ -179,11 +190,12 @@ func BoolToCInt(in bool) (out C.int) {
 /*      Geometry functions                                              */
 /* -------------------------------------------------------------------- */
 
+// Geometry is an exported GDAL/OGR type.
 type Geometry struct {
 	cval C.OGRGeometryH
 }
 
-// Create a geometry object from its well known binary representation
+// CreateFromWKB creates a geometry object from its well known binary representation.
 func CreateFromWKB(wkb []uint8, srs SpatialReference, bytes int) (Geometry, error) {
 	var newGeom Geometry
 	if len(wkb) == 0 {
@@ -198,7 +210,7 @@ func CreateFromWKB(wkb []uint8, srs SpatialReference, bytes int) (Geometry, erro
 	))
 }
 
-// Create a geometry object from its well known text representation
+// CreateFromWKT creates a geometry object from its well known text representation.
 func CreateFromWKT(wkt string, srs SpatialReference) (Geometry, error) {
 	cString := C.CString(wkt)
 	defer C.free(unsafe.Pointer(cString))
@@ -208,7 +220,7 @@ func CreateFromWKT(wkt string, srs SpatialReference) (Geometry, error) {
 	))
 }
 
-// Create a geometry object from its GeoJSON representation
+// CreateFromJson creates a geometry object from its GeoJSON representation.
 func CreateFromJson(_json string) Geometry {
 	cString := C.CString(_json)
 	defer C.free(unsafe.Pointer(cString))
@@ -228,7 +240,7 @@ func Create(geomType GeometryType) Geometry {
 	return Geometry{geom}
 }
 
-// Stroke arc to linestring
+// ApproximateArcAngles strokes arc to linestring.
 func ApproximateArcAngles(
 	x, y, z,
 	primaryRadius,
@@ -251,64 +263,64 @@ func ApproximateArcAngles(
 	return Geometry{geom}
 }
 
-// Convert to polygon
-func (geom Geometry) ForceToPolygon() Geometry {
-	newGeom := C.OGR_G_ForceToPolygon(geom.cval)
+// ForceToPolygon converts to polygon.
+func (geometry Geometry) ForceToPolygon() Geometry {
+	newGeom := C.OGR_G_ForceToPolygon(geometry.cval)
 	return Geometry{newGeom}
 }
 
-// Convert to multipolygon
-func (geom Geometry) ForceToMultiPolygon() Geometry {
-	newGeom := C.OGR_G_ForceToMultiPolygon(geom.cval)
+// ForceToMultiPolygon converts to multipolygon.
+func (geometry Geometry) ForceToMultiPolygon() Geometry {
+	newGeom := C.OGR_G_ForceToMultiPolygon(geometry.cval)
 	return Geometry{newGeom}
 }
 
-// Convert to multipoint
-func (geom Geometry) ForceToMultiPoint() Geometry {
-	newGeom := C.OGR_G_ForceToMultiPoint(geom.cval)
+// ForceToMultiPoint converts to multipoint.
+func (geometry Geometry) ForceToMultiPoint() Geometry {
+	newGeom := C.OGR_G_ForceToMultiPoint(geometry.cval)
 	return Geometry{newGeom}
 }
 
-// Convert to multilinestring
-func (geom Geometry) ForceToMultiLineString() Geometry {
-	newGeom := C.OGR_G_ForceToMultiLineString(geom.cval)
+// ForceToMultiLineString converts to multilinestring.
+func (geometry Geometry) ForceToMultiLineString() Geometry {
+	newGeom := C.OGR_G_ForceToMultiLineString(geometry.cval)
 	return Geometry{newGeom}
 }
 
-// Get the dimension of this geometry
-func (geom Geometry) Dimension() int {
-	dim := C.OGR_G_GetDimension(geom.cval)
+// Dimension returns the dimension of this geometry.
+func (geometry Geometry) Dimension() int {
+	dim := C.OGR_G_GetDimension(geometry.cval)
 	return int(dim)
 }
 
-// Get the dimension of the coordinates in this geometry
-func (geom Geometry) CoordinateDimension() int {
-	dim := C.OGR_G_GetCoordinateDimension(geom.cval)
+// CoordinateDimension returns the dimension of the coordinates in this geometry.
+func (geometry Geometry) CoordinateDimension() int {
+	dim := C.OGR_G_GetCoordinateDimension(geometry.cval)
 	return int(dim)
 }
 
-// Set the dimension of the coordinates in this geometry
-func (geom Geometry) SetCoordinateDimension(dim int) {
-	C.OGR_G_SetCoordinateDimension(geom.cval, C.int(dim))
+// SetCoordinateDimension sets the dimension of the coordinates in this geometry.
+func (geometry Geometry) SetCoordinateDimension(dim int) {
+	C.OGR_G_SetCoordinateDimension(geometry.cval, C.int(dim))
 }
 
-// Create a copy of this geometry
-func (geom Geometry) Clone() Geometry {
-	newGeom := C.OGR_G_Clone(geom.cval)
+// Clone creates a copy of this geometry.
+func (geometry Geometry) Clone() Geometry {
+	newGeom := C.OGR_G_Clone(geometry.cval)
 	return Geometry{newGeom}
 }
 
-// Compute and return the bounding envelope for this geometry
-func (geom Geometry) Envelope() Envelope {
+// Envelope computes and returns the bounding envelope for this geometry.
+func (geometry Geometry) Envelope() Envelope {
 	var env Envelope
-	C.OGR_G_GetEnvelope(geom.cval, &env.cval)
+	C.OGR_G_GetEnvelope(geometry.cval, &env.cval)
 	return env
 }
 
 // Unimplemented: GetEnvelope3D
 
-// Assign a geometry from well known binary data
-func (geom Geometry) FromWKB(wkb []uint8, bytes int) error {
+// FromWKB assigns a geometry from well known binary data.
+func (geometry Geometry) FromWKB(wkb []uint8, bytes int) error {
 	if len(wkb) == 0 {
 		return fmt.Errorf("wkb must not be empty")
 	}
@@ -316,62 +328,62 @@ func (geom Geometry) FromWKB(wkb []uint8, bytes int) error {
 		return fmt.Errorf("wkb byte count %d is out of range for buffer length %d", bytes, len(wkb))
 	}
 	cString := unsafe.Pointer(&wkb[0])
-	return ErrFromOGRErr(C.go_ImportFromWkb(geom.cval, cString, C.int(bytes)))
+	return ErrFromOGRErr(C.go_ImportFromWkb(geometry.cval, cString, C.int(bytes)))
 }
 
-// Convert a geometry to well known binary data
-func (geom Geometry) ToWKB() ([]uint8, error) {
-	b := make([]uint8, geom.WKBSize())
+// ToWKB converts a geometry to well known binary data.
+func (geometry Geometry) ToWKB() ([]uint8, error) {
+	b := make([]uint8, geometry.WKBSize())
 	cString := (*C.uchar)(unsafe.Pointer(&b[0]))
-	err := ErrFromOGRErr(C.go_ExportToWkb(geom.cval, C.OGRwkbByteOrder(C.wkbNDR), cString))
+	err := ErrFromOGRErr(C.go_ExportToWkb(geometry.cval, C.OGRwkbByteOrder(C.wkbNDR), cString))
 	return b, err
 }
 
-// Returns size of related binary representation
-func (geom Geometry) WKBSize() int {
-	size := C.OGR_G_WkbSize(geom.cval)
+// WKBSize returns size of related binary representation.
+func (geometry Geometry) WKBSize() int {
+	size := C.OGR_G_WkbSize(geometry.cval)
 	return int(size)
 }
 
-// Assign geometry object from its well known text representation
-func (geom Geometry) FromWKT(wkt string) error {
+// FromWKT assigns geometry object from its well known text representation.
+func (geometry Geometry) FromWKT(wkt string) error {
 	cString := C.CString(wkt)
 	defer C.free(unsafe.Pointer(cString))
-	return ErrFromOGRErr(C.OGR_G_ImportFromWkt(geom.cval, &cString))
+	return ErrFromOGRErr(C.OGR_G_ImportFromWkt(geometry.cval, &cString))
 }
 
-// Fetch geometry as WKT
-func (geom Geometry) ToWKT() (string, error) {
+// ToWKT returns geometry as WKT.
+func (geometry Geometry) ToWKT() (string, error) {
 	var p *C.char
-	err := ErrFromOGRErr(C.OGR_G_ExportToWkt(geom.cval, &p))
+	err := ErrFromOGRErr(C.OGR_G_ExportToWkt(geometry.cval, &p))
 	return goStringAndCPLFree(p), err
 }
 
-// Fetch geometry type
-func (geom Geometry) Type() GeometryType {
-	gt := C.OGR_G_GetGeometryType(geom.cval)
+// Type returns geometry type.
+func (geometry Geometry) Type() GeometryType {
+	gt := C.OGR_G_GetGeometryType(geometry.cval)
 	return GeometryType(gt)
 }
 
-// Fetch geometry name
-func (geom Geometry) Name() string {
-	name := C.OGR_G_GetGeometryName(geom.cval)
+// Name returns geometry name.
+func (geometry Geometry) Name() string {
+	name := C.OGR_G_GetGeometryName(geometry.cval)
 	return C.GoString(name)
 }
 
 // Unimplemented: DumpReadable
 
-// Convert geometry to strictly 2D
-func (geom Geometry) FlattenTo2D() {
-	C.OGR_G_FlattenTo2D(geom.cval)
+// FlattenTo2D converts geometry to strictly 2D.
+func (geometry Geometry) FlattenTo2D() {
+	C.OGR_G_FlattenTo2D(geometry.cval)
 }
 
-// Force rings to be closed
-func (geom Geometry) CloseRings() {
-	C.OGR_G_CloseRings(geom.cval)
+// CloseRings wraps the corresponding GDAL/OGR operation.
+func (geometry Geometry) CloseRings() {
+	C.OGR_G_CloseRings(geometry.cval)
 }
 
-// Create a geometry from its GML representation
+// CreateFromGML creates a geometry from its GML representation.
 func CreateFromGML(gml string) Geometry {
 	cString := C.CString(gml)
 	defer C.free(unsafe.Pointer(cString))
@@ -379,13 +391,13 @@ func CreateFromGML(gml string) Geometry {
 	return Geometry{geom}
 }
 
-// Convert a geometry to GML format
-func (geom Geometry) ToGML() string {
-	return goStringAndCPLFree(C.OGR_G_ExportToGML(geom.cval))
+// ToGML converts a geometry to GML format.
+func (geometry Geometry) ToGML() string {
+	return goStringAndCPLFree(C.OGR_G_ExportToGML(geometry.cval))
 }
 
-// Convert a geometry to GML format with options
-func (geom Geometry) ToGML_Ex(options []string) string {
+// ToGML_Ex converts a geometry to GML format with options.
+func (geometry Geometry) ToGML_Ex(options []string) string {
 	length := len(options)
 	opts := make([]*C.char, length+1)
 	for i := 0; i < length; i++ {
@@ -394,21 +406,21 @@ func (geom Geometry) ToGML_Ex(options []string) string {
 	}
 	opts[length] = (*C.char)(unsafe.Pointer(nil))
 
-	return goStringAndCPLFree(C.OGR_G_ExportToGMLEx(geom.cval, (**C.char)(unsafe.Pointer(&opts[0]))))
+	return goStringAndCPLFree(C.OGR_G_ExportToGMLEx(geometry.cval, (**C.char)(unsafe.Pointer(&opts[0]))))
 }
 
-// Convert a geometry to KML format
-func (geom Geometry) ToKML() string {
-	return goStringAndCPLFree(C.OGR_G_ExportToKML(geom.cval, nil))
+// ToKML converts a geometry to KML format.
+func (geometry Geometry) ToKML() string {
+	return goStringAndCPLFree(C.OGR_G_ExportToKML(geometry.cval, nil))
 }
 
-// Convert a geometry to JSON format
-func (geom Geometry) ToJSON() string {
-	return goStringAndCPLFree(C.OGR_G_ExportToJson(geom.cval))
+// ToJSON converts a geometry to JSON format.
+func (geometry Geometry) ToJSON() string {
+	return goStringAndCPLFree(C.OGR_G_ExportToJson(geometry.cval))
 }
 
-// Convert a geometry to JSON format with options
-func (geom Geometry) ToJSON_ex(options []string) string {
+// ToJSON_ex converts a geometry to JSON format with options.
+func (geometry Geometry) ToJSON_ex(options []string) string {
 	length := len(options)
 	opts := make([]*C.char, length+1)
 	for i := 0; i < length; i++ {
@@ -417,127 +429,128 @@ func (geom Geometry) ToJSON_ex(options []string) string {
 	}
 	opts[length] = (*C.char)(unsafe.Pointer(nil))
 
-	return goStringAndCPLFree(C.OGR_G_ExportToJsonEx(geom.cval, (**C.char)(unsafe.Pointer(&opts[0]))))
+	return goStringAndCPLFree(C.OGR_G_ExportToJsonEx(geometry.cval, (**C.char)(unsafe.Pointer(&opts[0]))))
 }
 
-// Fetch the spatial reference associated with this geometry
-func (geom Geometry) SpatialReference() SpatialReference {
-	spatialRef := C.OGR_G_GetSpatialReference(geom.cval)
+// SpatialReference returns the spatial reference associated with this geometry.
+func (geometry Geometry) SpatialReference() SpatialReference {
+	spatialRef := C.OGR_G_GetSpatialReference(geometry.cval)
 	return SpatialReference{spatialRef}
 }
 
-// Assign a spatial reference to this geometry
-func (geom Geometry) SetSpatialReference(spatialRef SpatialReference) {
-	C.OGR_G_AssignSpatialReference(geom.cval, spatialRef.cval)
+// SetSpatialReference assigns a spatial reference to this geometry.
+func (geometry Geometry) SetSpatialReference(spatialRef SpatialReference) {
+	C.OGR_G_AssignSpatialReference(geometry.cval, spatialRef.cval)
 }
 
-// Apply coordinate transformation to geometry
-func (geom Geometry) Transform(ct CoordinateTransform) error {
-	return ErrFromOGRErr(C.OGR_G_Transform(geom.cval, ct.cval))
+// Transform applies coordinate transformation to geometry.
+func (geometry Geometry) Transform(ct CoordinateTransform) error {
+	return ErrFromOGRErr(C.OGR_G_Transform(geometry.cval, ct.cval))
 }
 
-// Transform geometry to new spatial reference system
-func (geom Geometry) TransformTo(sr SpatialReference) error {
-	return ErrFromOGRErr(C.OGR_G_TransformTo(geom.cval, sr.cval))
+// TransformTo wraps the corresponding GDAL/OGR operation.
+func (geometry Geometry) TransformTo(sr SpatialReference) error {
+	return ErrFromOGRErr(C.OGR_G_TransformTo(geometry.cval, sr.cval))
 }
 
 // Simplify the geometry
-func (geom Geometry) Simplify(tolerance float64) Geometry {
-	newGeom := C.OGR_G_Simplify(geom.cval, C.double(tolerance))
+func (geometry Geometry) Simplify(tolerance float64) Geometry {
+	newGeom := C.OGR_G_Simplify(geometry.cval, C.double(tolerance))
 	return Geometry{newGeom}
 }
 
-// Simplify the geometry while preserving topology
-func (geom Geometry) SimplifyPreservingTopology(tolerance float64) Geometry {
-	newGeom := C.OGR_G_SimplifyPreserveTopology(geom.cval, C.double(tolerance))
+// SimplifyPreservingTopology simplifies the geometry while preserving topology.
+func (geometry Geometry) SimplifyPreservingTopology(tolerance float64) Geometry {
+	newGeom := C.OGR_G_SimplifyPreserveTopology(geometry.cval, C.double(tolerance))
 	return Geometry{newGeom}
 }
 
-// Modify the geometry such that it has no line segment longer than the given distance
-func (geom Geometry) Segmentize(distance float64) {
-	C.OGR_G_Segmentize(geom.cval, C.double(distance))
+// Segmentize modifies the geometry such that it has no line segment longer than the given distance.
+func (geometry Geometry) Segmentize(distance float64) {
+	C.OGR_G_Segmentize(geometry.cval, C.double(distance))
 }
 
-// Return true if these features intersect
-func (geom Geometry) Intersects(other Geometry) bool {
-	val := C.OGR_G_Intersects(geom.cval, other.cval)
+// Intersects reports whether these features intersect.
+func (geometry Geometry) Intersects(other Geometry) bool {
+	val := C.OGR_G_Intersects(geometry.cval, other.cval)
 	return val != 0
 }
 
-// Return true if these features are equal
-func (geom Geometry) Equals(other Geometry) bool {
-	val := C.OGR_G_Equals(geom.cval, other.cval)
+// Equals reports whether these features are equal.
+func (geometry Geometry) Equals(other Geometry) bool {
+	val := C.OGR_G_Equals(geometry.cval, other.cval)
 	return val != 0
 }
 
-// Return true if the features are disjoint
-func (geom Geometry) Disjoint(other Geometry) bool {
-	val := C.OGR_G_Disjoint(geom.cval, other.cval)
+// Disjoint reports whether the features are disjoint.
+func (geometry Geometry) Disjoint(other Geometry) bool {
+	val := C.OGR_G_Disjoint(geometry.cval, other.cval)
 	return val != 0
 }
 
-// Return true if this feature touches the other
-func (geom Geometry) Touches(other Geometry) bool {
-	val := C.OGR_G_Touches(geom.cval, other.cval)
+// Touches reports whether this feature touches the other.
+func (geometry Geometry) Touches(other Geometry) bool {
+	val := C.OGR_G_Touches(geometry.cval, other.cval)
 	return val != 0
 }
 
-// Return true if this feature crosses the other
-func (geom Geometry) Crosses(other Geometry) bool {
-	val := C.OGR_G_Crosses(geom.cval, other.cval)
+// Crosses reports whether this feature crosses the other.
+func (geometry Geometry) Crosses(other Geometry) bool {
+	val := C.OGR_G_Crosses(geometry.cval, other.cval)
 	return val != 0
 }
 
-// Return true if this geometry is within the other
-func (geom Geometry) Within(other Geometry) bool {
-	val := C.OGR_G_Within(geom.cval, other.cval)
+// Within reports whether this geometry is within the other.
+func (geometry Geometry) Within(other Geometry) bool {
+	val := C.OGR_G_Within(geometry.cval, other.cval)
 	return val != 0
 }
 
-// Return true if this geometry contains the other
-func (geom Geometry) Contains(other Geometry) bool {
-	val := C.OGR_G_Contains(geom.cval, other.cval)
+// Contains reports whether this geometry contains the other.
+func (geometry Geometry) Contains(other Geometry) bool {
+	val := C.OGR_G_Contains(geometry.cval, other.cval)
 	return val != 0
 }
 
-// Return true if this geometry overlaps the other
-func (geom Geometry) Overlaps(other Geometry) bool {
-	val := C.OGR_G_Overlaps(geom.cval, other.cval)
+// Overlaps reports whether this geometry overlaps the other.
+func (geometry Geometry) Overlaps(other Geometry) bool {
+	val := C.OGR_G_Overlaps(geometry.cval, other.cval)
 	return val != 0
 }
 
-// Compute boundary for the geometry
-func (geom Geometry) Boundary() Geometry {
-	newGeom := C.OGR_G_Boundary(geom.cval)
+// Boundary computes boundary for the geometry.
+func (geometry Geometry) Boundary() Geometry {
+	newGeom := C.OGR_G_Boundary(geometry.cval)
 	return Geometry{newGeom}
 }
 
-// Compute convex hull for the geometry
-func (geom Geometry) ConvexHull() Geometry {
-	newGeom := C.OGR_G_ConvexHull(geom.cval)
+// ConvexHull computes convex hull for the geometry.
+func (geometry Geometry) ConvexHull() Geometry {
+	newGeom := C.OGR_G_ConvexHull(geometry.cval)
 	return Geometry{newGeom}
 }
 
-// Compute buffer of the geometry
-func (geom Geometry) Buffer(distance float64, segments int) Geometry {
-	newGeom := C.OGR_G_Buffer(geom.cval, C.double(distance), C.int(segments))
+// Buffer computes buffer of the geometry.
+func (geometry Geometry) Buffer(distance float64, segments int) Geometry {
+	newGeom := C.OGR_G_Buffer(geometry.cval, C.double(distance), C.int(segments))
 	return Geometry{newGeom}
 }
 
-// Compute intersection of this geometry with the other
-func (geom Geometry) Intersection(other Geometry) Geometry {
-	newGeom := C.OGR_G_Intersection(geom.cval, other.cval)
+// Intersection computes intersection of this geometry with the other.
+func (geometry Geometry) Intersection(other Geometry) Geometry {
+	newGeom := C.OGR_G_Intersection(geometry.cval, other.cval)
 	return Geometry{newGeom}
 }
 
-// Compute union of this geometry with the other
-func (geom Geometry) Union(other Geometry) Geometry {
-	newGeom := C.OGR_G_Union(geom.cval, other.cval)
+// Union computes union of this geometry with the other.
+func (geometry Geometry) Union(other Geometry) Geometry {
+	newGeom := C.OGR_G_Union(geometry.cval, other.cval)
 	return Geometry{newGeom}
 }
 
-func (geom Geometry) UnionCascaded() Geometry {
-	newGeom := C.OGR_G_UnionCascaded(geom.cval)
+// UnionCascaded wraps the corresponding GDAL/OGR operation.
+func (geometry Geometry) UnionCascaded() Geometry {
+	newGeom := C.OGR_G_UnionCascaded(geometry.cval)
 	return Geometry{newGeom}
 }
 
@@ -548,122 +561,119 @@ func (geom Geometry) UnionCascaded() Geometry {
 //  return Geometry{newGeom}
 // }
 
-// Compute difference between this geometry and the other
-func (geom Geometry) Difference(other Geometry) Geometry {
-	newGeom := C.OGR_G_Difference(geom.cval, other.cval)
+// Difference computes difference between this geometry and the other.
+func (geometry Geometry) Difference(other Geometry) Geometry {
+	newGeom := C.OGR_G_Difference(geometry.cval, other.cval)
 	return Geometry{newGeom}
 }
 
-// Compute symmetric difference between this geometry and the other
-func (geom Geometry) SymmetricDifference(other Geometry) Geometry {
-	newGeom := C.OGR_G_SymDifference(geom.cval, other.cval)
+// SymmetricDifference computes symmetric difference between this geometry and the other.
+func (geometry Geometry) SymmetricDifference(other Geometry) Geometry {
+	newGeom := C.OGR_G_SymDifference(geometry.cval, other.cval)
 	return Geometry{newGeom}
 }
 
-// Compute distance between thie geometry and the other
-func (geom Geometry) Distance(other Geometry) float64 {
-	dist := C.OGR_G_Distance(geom.cval, other.cval)
+// Distance computes distance between thie geometry and the other.
+func (geometry Geometry) Distance(other Geometry) float64 {
+	dist := C.OGR_G_Distance(geometry.cval, other.cval)
 	return float64(dist)
 }
 
-// Compute 3D distance between thie geometry and the other.
-// This method is built on the SFCGAL library,
-// check it for the definition of the geometry operation.
-// If OGR is built without the SFCGAL library, this method will always return -1.0
-func (geom Geometry) Distance3D(other Geometry) float64 {
-	dist := C.OGR_G_Distance3D(geom.cval, other.cval)
+// Distance3D computes 3D distance between thie geometry and the other. This method is built on the SFCGAL library, check it for the definition of the geometry operation. If OGR is built without the SFCGAL library, this method will always return -1.0.
+func (geometry Geometry) Distance3D(other Geometry) float64 {
+	dist := C.OGR_G_Distance3D(geometry.cval, other.cval)
 	return float64(dist)
 }
 
-// Compute length of geometry
-func (geom Geometry) Length() float64 {
-	length := C.OGR_G_Length(geom.cval)
+// Length computes length of geometry.
+func (geometry Geometry) Length() float64 {
+	length := C.OGR_G_Length(geometry.cval)
 	return float64(length)
 }
 
-// Compute area of geometry
-func (geom Geometry) Area() float64 {
-	area := C.OGR_G_Area(geom.cval)
+// Area computes area of geometry.
+func (geometry Geometry) Area() float64 {
+	area := C.OGR_G_Area(geometry.cval)
 	return float64(area)
 }
 
-// Compute centroid of geometry
-func (geom Geometry) Centroid() Geometry {
+// Centroid computes centroid of geometry.
+func (geometry Geometry) Centroid() Geometry {
 	var centroid Geometry
-	C.OGR_G_Centroid(geom.cval, centroid.cval)
+	C.OGR_G_Centroid(geometry.cval, centroid.cval)
 	return centroid
 }
 
-// Clear the geometry to its uninitialized state
-func (geom Geometry) Empty() {
-	C.OGR_G_Empty(geom.cval)
+// Empty wraps the corresponding GDAL/OGR operation.
+func (geometry Geometry) Empty() {
+	C.OGR_G_Empty(geometry.cval)
 }
 
-// Test if the geometry is empty
-func (geom Geometry) IsEmpty() bool {
-	val := C.OGR_G_IsEmpty(geom.cval)
+// IsEmpty reports whether the geometry is empty.
+func (geometry Geometry) IsEmpty() bool {
+	val := C.OGR_G_IsEmpty(geometry.cval)
 	return val != 0
 }
 
-// Test if the geometry is null
-func (geom Geometry) IsNull() bool {
-	return geom.cval == nil
+// IsNull reports whether the geometry is null.
+func (geometry Geometry) IsNull() bool {
+	return geometry.cval == nil
 }
 
-// Test if the geometry is valid
-func (geom Geometry) IsValid() bool {
-	val := C.OGR_G_IsValid(geom.cval)
+// IsValid reports whether the geometry is valid.
+func (geometry Geometry) IsValid() bool {
+	val := C.OGR_G_IsValid(geometry.cval)
 	return val != 0
 }
 
-// Test if the geometry is simple
-func (geom Geometry) IsSimple() bool {
-	val := C.OGR_G_IsSimple(geom.cval)
+// IsSimple reports whether the geometry is simple.
+func (geometry Geometry) IsSimple() bool {
+	val := C.OGR_G_IsSimple(geometry.cval)
 	return val != 0
 }
 
-// Test if the geometry is a ring
-func (geom Geometry) IsRing() bool {
-	val := C.OGR_G_IsRing(geom.cval)
+// IsRing reports whether the geometry is a ring.
+func (geometry Geometry) IsRing() bool {
+	val := C.OGR_G_IsRing(geometry.cval)
 	return val != 0
 }
 
 // Polygonize a set of sparse edges
-func (geom Geometry) Polygonize() Geometry {
-	newGeom := C.OGR_G_Polygonize(geom.cval)
+func (geometry Geometry) Polygonize() Geometry {
+	newGeom := C.OGR_G_Polygonize(geometry.cval)
 	return Geometry{newGeom}
 }
 
-// Fetch number of points in the geometry
-func (geom Geometry) PointCount() int {
-	count := C.OGR_G_GetPointCount(geom.cval)
+// PointCount returns number of points in the geometry.
+func (geometry Geometry) PointCount() int {
+	count := C.OGR_G_GetPointCount(geometry.cval)
 	return int(count)
 }
 
 // Unimplemented: Points
 
-// Fetch the X coordinate of a point in the geometry
-func (geom Geometry) X(index int) float64 {
-	x := C.OGR_G_GetX(geom.cval, C.int(index))
+// X returns the X coordinate of a point in the geometry.
+func (geometry Geometry) X(index int) float64 {
+	x := C.OGR_G_GetX(geometry.cval, C.int(index))
 	return float64(x)
 }
 
-// Fetch the Y coordinate of a point in the geometry
-func (geom Geometry) Y(index int) float64 {
-	y := C.OGR_G_GetY(geom.cval, C.int(index))
+// Y returns the Y coordinate of a point in the geometry.
+func (geometry Geometry) Y(index int) float64 {
+	y := C.OGR_G_GetY(geometry.cval, C.int(index))
 	return float64(y)
 }
 
-// Fetch the Z coordinate of a point in the geometry
-func (geom Geometry) Z(index int) float64 {
-	z := C.OGR_G_GetZ(geom.cval, C.int(index))
+// Z returns the Z coordinate of a point in the geometry.
+func (geometry Geometry) Z(index int) float64 {
+	z := C.OGR_G_GetZ(geometry.cval, C.int(index))
 	return float64(z)
 }
 
-// Fetch the coordinates of a point in the geometry
-func (geom Geometry) Point(index int) (x, y, z float64) {
+// Point returns the coordinates of a point in the geometry.
+func (geometry Geometry) Point(index int) (x, y, z float64) {
 	C.OGR_G_GetPoint(
-		geom.cval,
+		geometry.cval,
 		C.int(index),
 		(*C.double)(&x),
 		(*C.double)(&y),
@@ -671,63 +681,63 @@ func (geom Geometry) Point(index int) (x, y, z float64) {
 	return
 }
 
-// Set the coordinates of a point in the geometry
-func (geom Geometry) SetPoint(index int, x, y, z float64) {
+// SetPoint sets the coordinates of a point in the geometry.
+func (geometry Geometry) SetPoint(index int, x, y, z float64) {
 	C.OGR_G_SetPoint(
-		geom.cval,
+		geometry.cval,
 		C.int(index),
 		C.double(x),
 		C.double(y),
 		C.double(z))
 }
 
-// Set the coordinates of a point in the geometry, ignoring the 3rd dimension
-func (geom Geometry) SetPoint2D(index int, x, y float64) {
-	C.OGR_G_SetPoint_2D(geom.cval, C.int(index), C.double(x), C.double(y))
+// SetPoint2D sets the coordinates of a point in the geometry, ignoring the 3rd dimension.
+func (geometry Geometry) SetPoint2D(index int, x, y float64) {
+	C.OGR_G_SetPoint_2D(geometry.cval, C.int(index), C.double(x), C.double(y))
 }
 
-// Add a new point to the geometry (line string or polygon only)
-func (geom Geometry) AddPoint(x, y, z float64) {
-	C.OGR_G_AddPoint(geom.cval, C.double(x), C.double(y), C.double(z))
+// AddPoint adds a new point to the geometry (line string or polygon only).
+func (geometry Geometry) AddPoint(x, y, z float64) {
+	C.OGR_G_AddPoint(geometry.cval, C.double(x), C.double(y), C.double(z))
 }
 
-// Add a new point to the geometry (line string or polygon only), ignoring the 3rd dimension
-func (geom Geometry) AddPoint2D(x, y float64) {
-	C.OGR_G_AddPoint_2D(geom.cval, C.double(x), C.double(y))
+// AddPoint2D adds a new point to the geometry (line string or polygon only), ignoring the 3rd dimension.
+func (geometry Geometry) AddPoint2D(x, y float64) {
+	C.OGR_G_AddPoint_2D(geometry.cval, C.double(x), C.double(y))
 }
 
-// Fetch the number of elements in the geometry, or number of geometries in the container
-func (geom Geometry) GeometryCount() int {
-	count := C.OGR_G_GetGeometryCount(geom.cval)
+// GeometryCount returns the number of elements in the geometry, or number of geometries in the container.
+func (geometry Geometry) GeometryCount() int {
+	count := C.OGR_G_GetGeometryCount(geometry.cval)
 	return int(count)
 }
 
-// Fetch geometry from a geometry container
-func (geom Geometry) Geometry(index int) Geometry {
-	newGeom := C.OGR_G_GetGeometryRef(geom.cval, C.int(index))
+// Geometry returns geometry from a geometry container.
+func (geometry Geometry) Geometry(index int) Geometry {
+	newGeom := C.OGR_G_GetGeometryRef(geometry.cval, C.int(index))
 	return Geometry{newGeom}
 }
 
-// Add a geometry to a geometry container
-func (geom Geometry) AddGeometry(other Geometry) error {
-	return ErrFromOGRErr(C.OGR_G_AddGeometry(geom.cval, other.cval))
+// AddGeometry adds a geometry to a geometry container.
+func (geometry Geometry) AddGeometry(other Geometry) error {
+	return ErrFromOGRErr(C.OGR_G_AddGeometry(geometry.cval, other.cval))
 }
 
-// Add a geometry to a geometry container and assign ownership to that container
-func (geom Geometry) AddGeometryDirectly(other Geometry) error {
-	return ErrFromOGRErr(C.OGR_G_AddGeometryDirectly(geom.cval, other.cval))
+// AddGeometryDirectly adds a geometry to a geometry container and assign ownership to that container.
+func (geometry Geometry) AddGeometryDirectly(other Geometry) error {
+	return ErrFromOGRErr(C.OGR_G_AddGeometryDirectly(geometry.cval, other.cval))
 }
 
-// Remove a geometry from the geometry container
-func (geom Geometry) RemoveGeometry(index int, delete bool) error {
-	return ErrFromOGRErr(C.OGR_G_RemoveGeometry(geom.cval, C.int(index), BoolToCInt(delete)))
+// RemoveGeometry removes a geometry from the geometry container.
+func (geometry Geometry) RemoveGeometry(index int, delete bool) error {
+	return ErrFromOGRErr(C.OGR_G_RemoveGeometry(geometry.cval, C.int(index), BoolToCInt(delete)))
 }
 
-// Build a polygon / ring from a set of lines
-func (geom Geometry) BuildPolygonFromEdges(autoClose bool, tolerance float64) (Geometry, error) {
+// BuildPolygonFromEdges builds a polygon / ring from a set of lines.
+func (geometry Geometry) BuildPolygonFromEdges(autoClose bool, tolerance float64) (Geometry, error) {
 	var cErr C.OGRErr
 	newGeom := C.OGRBuildPolygonFromEdges(
-		geom.cval,
+		geometry.cval,
 		0,
 		BoolToCInt(autoClose),
 		C.double(tolerance),
@@ -740,9 +750,10 @@ func (geom Geometry) BuildPolygonFromEdges(autoClose bool, tolerance float64) (G
 /*      Field definition functions                                      */
 /* -------------------------------------------------------------------- */
 
-// List of well known binary geometry types
+// FieldType enumerates well known binary geometry types.
 type FieldType int
 
+// FT_Integer and related constants are exported GDAL/OGR symbols.
 const (
 	FT_Integer       = FieldType(C.OFTInteger)
 	FT_IntegerList   = FieldType(C.OFTIntegerList)
@@ -758,23 +769,27 @@ const (
 	FT_Integer64List = FieldType(C.OFTInteger64List)
 )
 
+// Justification is an exported GDAL/OGR type.
 type Justification int
 
+// J_Undefined and related constants are exported GDAL/OGR symbols.
 const (
 	J_Undefined = Justification(C.OJUndefined)
 	J_Left      = Justification(C.OJLeft)
 	J_Right     = Justification(C.OJRight)
 )
 
+// FieldDefinition is an exported GDAL/OGR type.
 type FieldDefinition struct {
 	cval C.OGRFieldDefnH
 }
 
+// Field is an exported GDAL/OGR type.
 type Field struct {
 	cval *C.OGRField
 }
 
-// Create a new field definition
+// CreateFieldDefinition creates a new field definition.
 func CreateFieldDefinition(name string, fieldType FieldType) FieldDefinition {
 	cName := C.CString(name)
 	defer C.free(unsafe.Pointer(cName))
@@ -787,59 +802,59 @@ func (fd FieldDefinition) Destroy() {
 	C.OGR_Fld_Destroy(fd.cval)
 }
 
-// Fetch the name of the field
+// Name returns the name of the field.
 func (fd FieldDefinition) Name() string {
 	name := C.OGR_Fld_GetNameRef(fd.cval)
 	return C.GoString(name)
 }
 
-// Set the name of the field
+// SetName sets the name of the field.
 func (fd FieldDefinition) SetName(name string) {
 	cName := C.CString(name)
 	defer C.free(unsafe.Pointer(cName))
 	C.OGR_Fld_SetName(fd.cval, cName)
 }
 
-// Fetch the type of this field
+// Type returns the type of this field.
 func (fd FieldDefinition) Type() FieldType {
 	fType := C.OGR_Fld_GetType(fd.cval)
 	return FieldType(fType)
 }
 
-// Set the type of this field
+// SetType sets the type of this field.
 func (fd FieldDefinition) SetType(fType FieldType) {
 	C.OGR_Fld_SetType(fd.cval, C.OGRFieldType(fType))
 }
 
-// Fetch the justification for this field
+// Justification returns the justification for this field.
 func (fd FieldDefinition) Justification() Justification {
 	justify := C.OGR_Fld_GetJustify(fd.cval)
 	return Justification(justify)
 }
 
-// Set the justification for this field
+// SetJustification sets the justification for this field.
 func (fd FieldDefinition) SetJustification(justify Justification) {
 	C.OGR_Fld_SetJustify(fd.cval, C.OGRJustification(justify))
 }
 
-// Fetch the formatting width for this field
+// Width returns the formatting width for this field.
 func (fd FieldDefinition) Width() int {
 	width := C.OGR_Fld_GetWidth(fd.cval)
 	return int(width)
 }
 
-// Set the formatting width for this field
+// SetWidth sets the formatting width for this field.
 func (fd FieldDefinition) SetWidth(width int) {
 	C.OGR_Fld_SetWidth(fd.cval, C.int(width))
 }
 
-// Fetch the precision for this field
+// Precision returns the precision for this field.
 func (fd FieldDefinition) Precision() int {
 	precision := C.OGR_Fld_GetPrecision(fd.cval)
 	return int(precision)
 }
 
-// Set the precision for this field
+// SetPrecision sets the precision for this field.
 func (fd FieldDefinition) SetPrecision(precision int) {
 	C.OGR_Fld_SetPrecision(fd.cval, C.int(precision))
 }
@@ -864,18 +879,18 @@ func (fd FieldDefinition) Set(
 	)
 }
 
-// Fetch whether this field should be ignored when fetching features
+// IsIgnored returns whether this field should be ignored when fetching features.
 func (fd FieldDefinition) IsIgnored() bool {
 	ignore := C.OGR_Fld_IsIgnored(fd.cval)
 	return ignore != 0
 }
 
-// Set whether this field should be ignored when fetching features
+// SetIgnored sets whether this field should be ignored when fetching features.
 func (fd FieldDefinition) SetIgnored(ignore bool) {
 	C.OGR_Fld_SetIgnored(fd.cval, BoolToCInt(ignore))
 }
 
-// Fetch human readable name for the field type
+// Name returns human readable name for the field type.
 func (ft FieldType) Name() string {
 	name := C.OGR_GetFieldTypeName(C.OGRFieldType(ft))
 	return C.GoString(name)
@@ -885,11 +900,12 @@ func (ft FieldType) Name() string {
 /*      Feature definition functions                                    */
 /* -------------------------------------------------------------------- */
 
+// FeatureDefinition is an exported GDAL/OGR type.
 type FeatureDefinition struct {
 	cval C.OGRFeatureDefnH
 }
 
-// Create a new feature definition object
+// CreateFeatureDefinition creates a new feature definition object.
 func CreateFeatureDefinition(name string) FeatureDefinition {
 	cName := C.CString(name)
 	defer C.free(unsafe.Pointer(cName))
@@ -902,30 +918,30 @@ func (fd FeatureDefinition) Destroy() {
 	C.OGR_FD_Destroy(fd.cval)
 }
 
-// Drop a reference, and delete object if no references remain
+// Release drops a reference, and delete object if no references remain.
 func (fd FeatureDefinition) Release() {
 	C.OGR_FD_Release(fd.cval)
 }
 
-// Fetch the name of this feature definition
+// Name returns the name of this feature definition.
 func (fd FeatureDefinition) Name() string {
 	name := C.OGR_FD_GetName(fd.cval)
 	return C.GoString(name)
 }
 
-// Fetch the number of fields in the feature definition
+// FieldCount returns the number of fields in the feature definition.
 func (fd FeatureDefinition) FieldCount() int {
 	count := C.OGR_FD_GetFieldCount(fd.cval)
 	return int(count)
 }
 
-// Fetch the definition of the indicated field
+// FieldDefinition returns the definition of the indicated field.
 func (fd FeatureDefinition) FieldDefinition(index int) FieldDefinition {
 	fieldDefn := C.OGR_FD_GetFieldDefn(fd.cval, C.int(index))
 	return FieldDefinition{fieldDefn}
 }
 
-// Fetch the index of the named field
+// FieldIndex returns the index of the named field.
 func (fd FeatureDefinition) FieldIndex(name string) int {
 	cName := C.CString(name)
 	defer C.free(unsafe.Pointer(cName))
@@ -933,62 +949,62 @@ func (fd FeatureDefinition) FieldIndex(name string) int {
 	return int(index)
 }
 
-// Add a new field definition to this feature definition
+// AddFieldDefinition adds a new field definition to this feature definition.
 func (fd FeatureDefinition) AddFieldDefinition(fieldDefn FieldDefinition) {
 	C.OGR_FD_AddFieldDefn(fd.cval, fieldDefn.cval)
 }
 
-// Delete a field definition from this feature definition
+// DeleteFieldDefinition deletes a field definition from this feature definition.
 func (fd FeatureDefinition) DeleteFieldDefinition(index int) error {
 	return ErrFromOGRErr(C.OGR_FD_DeleteFieldDefn(fd.cval, C.int(index)))
 }
 
-// Fetch the geometry base type of this feature definition
+// GeometryType returns the geometry base type of this feature definition.
 func (fd FeatureDefinition) GeometryType() GeometryType {
 	gt := C.OGR_FD_GetGeomType(fd.cval)
 	return GeometryType(gt)
 }
 
-// Set the geometry base type for this feature definition
+// SetGeometryType sets the geometry base type for this feature definition.
 func (fd FeatureDefinition) SetGeometryType(geomType GeometryType) {
 	C.OGR_FD_SetGeomType(fd.cval, C.OGRwkbGeometryType(geomType))
 }
 
-// Fetch if the geometry can be ignored when fetching features
+// IsGeometryIgnored returns if the geometry can be ignored when fetching features.
 func (fd FeatureDefinition) IsGeometryIgnored() bool {
 	isIgnored := C.OGR_FD_IsGeometryIgnored(fd.cval)
 	return isIgnored != 0
 }
 
-// Set whether the geometry can be ignored when fetching features
+// SetGeometryIgnored sets whether the geometry can be ignored when fetching features.
 func (fd FeatureDefinition) SetGeometryIgnored(val bool) {
 	C.OGR_FD_SetGeometryIgnored(fd.cval, BoolToCInt(val))
 }
 
-// Fetch if the style can be ignored when fetching features
+// IsStyleIgnored returns if the style can be ignored when fetching features.
 func (fd FeatureDefinition) IsStyleIgnored() bool {
 	isIgnored := C.OGR_FD_IsStyleIgnored(fd.cval)
 	return isIgnored != 0
 }
 
-// Set whether the style can be ignored when fetching features
+// SetStyleIgnored sets whether the style can be ignored when fetching features.
 func (fd FeatureDefinition) SetStyleIgnored(val bool) {
 	C.OGR_FD_SetStyleIgnored(fd.cval, BoolToCInt(val))
 }
 
-// Increment the reference count by one
+// Reference increments the reference count by one.
 func (fd FeatureDefinition) Reference() int {
 	count := C.OGR_FD_Reference(fd.cval)
 	return int(count)
 }
 
-// Decrement the reference count by one
+// Dereference decrements the reference count by one.
 func (fd FeatureDefinition) Dereference() int {
 	count := C.OGR_FD_Dereference(fd.cval)
 	return int(count)
 }
 
-// Fetch the current reference count
+// ReferenceCount returns the current reference count.
 func (fd FeatureDefinition) ReferenceCount() int {
 	count := C.OGR_FD_GetReferenceCount(fd.cval)
 	return int(count)
@@ -998,6 +1014,7 @@ func (fd FeatureDefinition) ReferenceCount() int {
 /*      Feature functions                                               */
 /* -------------------------------------------------------------------- */
 
+// Feature is an exported GDAL/OGR type.
 type Feature struct {
 	cval C.OGRFeatureH
 }
@@ -1013,59 +1030,59 @@ func (feature Feature) Destroy() {
 	C.OGR_F_Destroy(feature.cval)
 }
 
-// Fetch feature definition
+// Definition returns feature definition.
 func (feature Feature) Definition() FeatureDefinition {
 	fd := C.OGR_F_GetDefnRef(feature.cval)
 	return FeatureDefinition{fd}
 }
 
-// Set feature geometry
+// SetGeometry sets feature geometry.
 func (feature Feature) SetGeometry(geom Geometry) error {
 	return ErrFromOGRErr(C.OGR_F_SetGeometry(feature.cval, geom.cval))
 }
 
-// Set feature geometry, passing ownership to the feature
+// SetGeometryDirectly sets feature geometry, passing ownership to the feature.
 func (feature Feature) SetGeometryDirectly(geom Geometry) error {
 	return ErrFromOGRErr(C.OGR_F_SetGeometryDirectly(feature.cval, geom.cval))
 }
 
-// Fetch geometry of this feature
+// Geometry returns geometry of this feature.
 func (feature Feature) Geometry() Geometry {
 	geom := C.OGR_F_GetGeometryRef(feature.cval)
 	return Geometry{geom}
 }
 
-// Fetch geometry of this feature and assume ownership
+// StealGeometry returns geometry of this feature and assume ownership.
 func (feature Feature) StealGeometry() Geometry {
 	geom := C.OGR_F_StealGeometry(feature.cval)
 	return Geometry{geom}
 }
 
-// Duplicate feature
+// Clone duplicates feature.
 func (feature Feature) Clone() Feature {
 	newFeature := C.OGR_F_Clone(feature.cval)
 	return Feature{newFeature}
 }
 
-// Test if two features are the same
-func (f1 Feature) Equal(f2 Feature) bool {
-	equal := C.OGR_F_Equal(f1.cval, f2.cval)
+// Equal reports whether two features are the same.
+func (feature Feature) Equal(f2 Feature) bool {
+	equal := C.OGR_F_Equal(feature.cval, f2.cval)
 	return equal != 0
 }
 
-// Fetch number of fields on this feature
+// FieldCount returns number of fields on this feature.
 func (feature Feature) FieldCount() int {
 	count := C.OGR_F_GetFieldCount(feature.cval)
 	return int(count)
 }
 
-// Fetch definition for the indicated field
+// FieldDefinition returns definition for the indicated field.
 func (feature Feature) FieldDefinition(index int) FieldDefinition {
 	defn := C.OGR_F_GetFieldDefnRef(feature.cval, C.int(index))
 	return FieldDefinition{defn}
 }
 
-// Fetch the field index for the given field name
+// FieldIndex returns the field index for the given field name.
 func (feature Feature) FieldIndex(name string) int {
 	cName := C.CString(name)
 	defer C.free(unsafe.Pointer(cName))
@@ -1073,81 +1090,81 @@ func (feature Feature) FieldIndex(name string) int {
 	return int(index)
 }
 
-// Return if a field has ever been assigned a value
+// IsFieldSet returns if a field has ever been assigned a value.
 func (feature Feature) IsFieldSet(index int) bool {
 	set := C.OGR_F_IsFieldSet(feature.cval, C.int(index))
 	return set != 0
 }
 
-// Clear a field and mark it as unset
+// UnnsetField wraps the corresponding GDAL/OGR operation.
 func (feature Feature) UnnsetField(index int) {
 	C.OGR_F_UnsetField(feature.cval, C.int(index))
 }
 
-// Fetch a reference to the internal field value
+// RawField returns a reference to the internal field value.
 func (feature Feature) RawField(index int) Field {
 	field := C.OGR_F_GetRawFieldRef(feature.cval, C.int(index))
 	return Field{field}
 }
 
-// Fetch field value as integer
+// FieldAsInteger returns field value as integer.
 func (feature Feature) FieldAsInteger(index int) int {
 	val := C.OGR_F_GetFieldAsInteger(feature.cval, C.int(index))
 	return int(val)
 }
 
-// Fetch field value as 64-bit integer
+// FieldAsInteger64 returns field value as 64-bit integer.
 func (feature Feature) FieldAsInteger64(index int) int64 {
 	val := C.OGR_F_GetFieldAsInteger64(feature.cval, C.int(index))
 	return int64(val)
 }
 
-// Fetch field value as float64
+// FieldAsFloat64 returns field value as float64.
 func (feature Feature) FieldAsFloat64(index int) float64 {
 	val := C.OGR_F_GetFieldAsDouble(feature.cval, C.int(index))
 	return float64(val)
 }
 
-// Fetch field value as string
+// FieldAsString returns field value as string.
 func (feature Feature) FieldAsString(index int) string {
 	val := C.OGR_F_GetFieldAsString(feature.cval, C.int(index))
 	return C.GoString(val)
 }
 
-// Fetch field as list of integers
+// FieldAsIntegerList returns field as list of integers.
 func (feature Feature) FieldAsIntegerList(index int) []int {
 	var count C.int
 	cArray := C.OGR_F_GetFieldAsIntegerList(feature.cval, C.int(index), &count)
 	return copyCIntArray(cArray, count)
 }
 
-// Fetch field as list of 64-bit integers
+// FieldAsInteger64List returns field as list of 64-bit integers.
 func (feature Feature) FieldAsInteger64List(index int) []int64 {
 	var count C.int
 	cArray := C.OGR_F_GetFieldAsInteger64List(feature.cval, C.int(index), &count)
 	return copyCGIntBigArray(cArray, count)
 }
 
-// Fetch field as list of float64
+// FieldAsFloat64List returns field as list of float64.
 func (feature Feature) FieldAsFloat64List(index int) []float64 {
 	var count C.int
 	cArray := C.OGR_F_GetFieldAsDoubleList(feature.cval, C.int(index), &count)
 	return copyCDoubleArray(cArray, count)
 }
 
-// Fetch field as list of strings
+// FieldAsStringList returns field as list of strings.
 func (feature Feature) FieldAsStringList(index int) []string {
 	return cStringListToSlice(C.OGR_F_GetFieldAsStringList(feature.cval, C.int(index)))
 }
 
-// Fetch field as binary data
+// FieldAsBinary returns field as binary data.
 func (feature Feature) FieldAsBinary(index int) []uint8 {
 	var count C.int
 	cArray := C.OGR_F_GetFieldAsBinary(feature.cval, C.int(index), &count)
 	return copyCUCharArray(cArray, count)
 }
 
-// Fetch field as date and time
+// FieldAsDateTime returns field as date and time.
 func (feature Feature) FieldAsDateTime(index int) (time.Time, bool) {
 	var year, month, day, hour, minute, second, tzFlag C.int
 	success := C.OGR_F_GetFieldAsDateTime(
@@ -1165,29 +1182,29 @@ func (feature Feature) FieldAsDateTime(index int) (time.Time, bool) {
 	return t, success != 0
 }
 
-// Set field to integer value
+// SetFieldInteger sets field to integer value.
 func (feature Feature) SetFieldInteger(index, value int) {
 	C.OGR_F_SetFieldInteger(feature.cval, C.int(index), C.int(value))
 }
 
-// Set field to 64-bit integer value
+// SetFieldInteger64 sets field to 64-bit integer value.
 func (feature Feature) SetFieldInteger64(index int, value int64) {
 	C.OGR_F_SetFieldInteger64(feature.cval, C.int(index), C.GIntBig(value))
 }
 
-// Set field to float64 value
+// SetFieldFloat64 sets field to float64 value.
 func (feature Feature) SetFieldFloat64(index int, value float64) {
 	C.OGR_F_SetFieldDouble(feature.cval, C.int(index), C.double(value))
 }
 
-// Set field to string value
+// SetFieldString sets field to string value.
 func (feature Feature) SetFieldString(index int, value string) {
 	cVal := C.CString(value)
 	defer C.free(unsafe.Pointer(cVal))
 	C.OGR_F_SetFieldString(feature.cval, C.int(index), cVal)
 }
 
-// Set field to list of integers
+// SetFieldIntegerList sets field to list of integers.
 func (feature Feature) SetFieldIntegerList(index int, value []int) {
 	cValue := IntSliceToCInt(value)
 	C.OGR_F_SetFieldIntegerList(
@@ -1198,7 +1215,7 @@ func (feature Feature) SetFieldIntegerList(index int, value []int) {
 	)
 }
 
-// Set field to list of 64-bit integers
+// SetFieldInteger64List sets field to list of 64-bit integers.
 func (feature Feature) SetFieldInteger64List(index int, value []int64) {
 	cValue := int64SliceToCGIntBig(value)
 	C.OGR_F_SetFieldInteger64List(
@@ -1209,7 +1226,7 @@ func (feature Feature) SetFieldInteger64List(index int, value []int64) {
 	)
 }
 
-// Set field to list of float64
+// SetFieldFloat64List sets field to list of float64.
 func (feature Feature) SetFieldFloat64List(index int, value []float64) {
 	C.OGR_F_SetFieldDoubleList(
 		feature.cval,
@@ -1219,7 +1236,7 @@ func (feature Feature) SetFieldFloat64List(index int, value []float64) {
 	)
 }
 
-// Set field to list of strings
+// SetFieldStringList sets field to list of strings.
 func (feature Feature) SetFieldStringList(index int, value []string) {
 	length := len(value)
 	cValue := make([]*C.char, length+1)
@@ -1236,12 +1253,12 @@ func (feature Feature) SetFieldStringList(index int, value []string) {
 	)
 }
 
-// Set field from the raw field pointer
+// SetFieldRaw sets field from the raw field pointer.
 func (feature Feature) SetFieldRaw(index int, field Field) {
 	C.OGR_F_SetFieldRaw(feature.cval, C.int(index), field.cval)
 }
 
-// Set field as binary data
+// SetFieldBinary sets field as binary data.
 func (feature Feature) SetFieldBinary(index int, value []uint8) {
 	C.OGR_F_SetFieldBinary(
 		feature.cval,
@@ -1251,7 +1268,7 @@ func (feature Feature) SetFieldBinary(index int, value []uint8) {
 	)
 }
 
-// Set field as date / time
+// SetFieldDateTime sets field as date / time.
 func (feature Feature) SetFieldDateTime(index int, dt time.Time) {
 	C.OGR_F_SetFieldDateTime(
 		feature.cval,
@@ -1266,51 +1283,51 @@ func (feature Feature) SetFieldDateTime(index int, dt time.Time) {
 	)
 }
 
-// Fetch feature indentifier
+// FID returns feature indentifier.
 func (feature Feature) FID() int64 {
 	fid := C.OGR_F_GetFID(feature.cval)
 	return int64(fid)
 }
 
-// Set feature identifier
+// SetFID sets feature identifier.
 func (feature Feature) SetFID(fid int64) error {
 	return ErrFromOGRErr(C.OGR_F_SetFID(feature.cval, C.GIntBig(fid)))
 }
 
 // Unimplemented: DumpReadable
 
-// Set one feature from another
-func (this Feature) SetFrom(other Feature, forgiving int) error {
-	return ErrFromOGRErr(C.OGR_F_SetFrom(this.cval, other.cval, C.int(forgiving)))
+// SetFrom sets one feature from another.
+func (feature Feature) SetFrom(other Feature, forgiving int) error {
+	return ErrFromOGRErr(C.OGR_F_SetFrom(feature.cval, other.cval, C.int(forgiving)))
 }
 
-// Set one feature from another, using field map
-func (this Feature) SetFromWithMap(other Feature, forgiving int, fieldMap []int) error {
+// SetFromWithMap sets one feature from another, using field map.
+func (feature Feature) SetFromWithMap(other Feature, forgiving int, fieldMap []int) error {
 	if len(fieldMap) == 0 {
 		return fmt.Errorf("fieldMap must not be empty")
 	}
 	cFieldMap := IntSliceToCInt(fieldMap)
 	return ErrFromOGRErr(C.OGR_F_SetFromWithMap(
-		this.cval,
+		feature.cval,
 		other.cval,
 		C.int(forgiving),
 		cIntSlicePtr(cFieldMap),
 	))
 }
 
-// Fetch style string for this feature
+// StlyeString returns style string for this feature.
 func (feature Feature) StlyeString() string {
 	style := C.OGR_F_GetStyleString(feature.cval)
 	return C.GoString(style)
 }
 
-// Set style string for this feature
+// SetStyleString sets style string for this feature.
 func (feature Feature) SetStyleString(style string) {
 	cStyle := C.CString(style)
 	C.OGR_F_SetStyleStringDirectly(feature.cval, cStyle)
 }
 
-// Returns true if this contains a null pointer
+// IsNull returns true if this contains a null pointer.
 func (feature Feature) IsNull() bool {
 	return feature.cval == nil
 }
@@ -1319,34 +1336,35 @@ func (feature Feature) IsNull() bool {
 /*      Layer functions                                                 */
 /* -------------------------------------------------------------------- */
 
+// Layer is an exported GDAL/OGR type.
 type Layer struct {
 	cval C.OGRLayerH
 }
 
-// Return the layer name
+// Name returns the layer name.
 func (layer Layer) Name() string {
 	name := C.OGR_L_GetName(layer.cval)
 	return C.GoString(name)
 }
 
-// Return the layer geometry type
+// Type returns the layer geometry type.
 func (layer Layer) Type() GeometryType {
 	gt := C.OGR_L_GetGeomType(layer.cval)
 	return GeometryType(gt)
 }
 
-// Return the current spatial filter for this layer
+// SpatialFilter returns the current spatial filter for this layer.
 func (layer Layer) SpatialFilter() Geometry {
 	geom := C.OGR_L_GetSpatialFilter(layer.cval)
 	return Geometry{geom}
 }
 
-// Set a new spatial filter for this layer
+// SetSpatialFilter sets a new spatial filter for this layer.
 func (layer Layer) SetSpatialFilter(filter Geometry) {
 	C.OGR_L_SetSpatialFilter(layer.cval, filter.cval)
 }
 
-// Set a new rectangular spatial filter for this layer
+// SetSpatialFilterRect sets a new rectangular spatial filter for this layer.
 func (layer Layer) SetSpatialFilterRect(minX, minY, maxX, maxY float64) {
 	C.OGR_L_SetSpatialFilterRect(
 		layer.cval,
@@ -1354,19 +1372,19 @@ func (layer Layer) SetSpatialFilterRect(minX, minY, maxX, maxY float64) {
 	)
 }
 
-// Set a new attribute query filter
+// SetAttributeFilter sets a new attribute query filter.
 func (layer Layer) SetAttributeFilter(filter string) error {
 	cFilter := C.CString(filter)
 	defer C.free(unsafe.Pointer(cFilter))
 	return ErrFromOGRErr(C.OGR_L_SetAttributeFilter(layer.cval, cFilter))
 }
 
-// Reset reading to start on the first featre
+// ResetReading resets reading to start on the first featre.
 func (layer Layer) ResetReading() {
 	C.OGR_L_ResetReading(layer.cval)
 }
 
-// Fetch the next available feature from this layer
+// NextFeature returns the next available feature from this layer.
 func (layer Layer) NextFeature() *Feature {
 	feature := C.OGR_L_GetNextFeature(layer.cval)
 	if feature == nil {
@@ -1375,18 +1393,18 @@ func (layer Layer) NextFeature() *Feature {
 	return &Feature{feature}
 }
 
-// Move read cursor to the provided index
+// SetNextByIndex moves read cursor to the provided index.
 func (layer Layer) SetNextByIndex(index int64) error {
 	return ErrFromOGRErr(C.OGR_L_SetNextByIndex(layer.cval, C.GIntBig(index)))
 }
 
-// Fetch a feature by its index
+// Feature returns a feature by its index.
 func (layer Layer) Feature(index int64) Feature {
 	feature := C.OGR_L_GetFeature(layer.cval, C.GIntBig(index))
 	return Feature{feature}
 }
 
-// Rewrite the provided feature
+// SetFeature rewrites the provided feature.
 func (layer Layer) SetFeature(feature Feature) error {
 	return ErrFromOGRErr(C.OGR_L_SetFeature(layer.cval, feature.cval))
 }
@@ -1401,31 +1419,31 @@ func (layer Layer) Delete(index int64) error {
 	return ErrFromOGRErr(C.OGR_L_DeleteFeature(layer.cval, C.GIntBig(index)))
 }
 
-// Fetch the schema information for this layer
+// Definition returns the schema information for this layer.
 func (layer Layer) Definition() FeatureDefinition {
 	defn := C.OGR_L_GetLayerDefn(layer.cval)
 	return FeatureDefinition{defn}
 }
 
-// Fetch the spatial reference system for this layer
+// SpatialReference returns the spatial reference system for this layer.
 func (layer Layer) SpatialReference() SpatialReference {
 	sr := C.OGR_L_GetSpatialRef(layer.cval)
 	return SpatialReference{sr}
 }
 
-// Fetch the feature count for this layer
+// FeatureCount returns the feature count for this layer.
 func (layer Layer) FeatureCount(force bool) (count int, ok bool) {
 	count = int(C.OGR_L_GetFeatureCount(layer.cval, BoolToCInt(force)))
 	return count, count != -1
 }
 
-// Fetch the extent of this layer
+// Extent returns the extent of this layer.
 func (layer Layer) Extent(force bool) (env Envelope, err error) {
 	err = ErrFromOGRErr(C.OGR_L_GetExtent(layer.cval, &env.cval, BoolToCInt(force)))
 	return
 }
 
-// Test if this layer supports the named capability
+// TestCapability reports whether this layer supports the named capability.
 func (layer Layer) TestCapability(capability string) bool {
 	cString := C.CString(capability)
 	defer C.free(unsafe.Pointer(cString))
@@ -1433,17 +1451,17 @@ func (layer Layer) TestCapability(capability string) bool {
 	return val != 0
 }
 
-// Create a new field on a layer
+// CreateField creates a new field on a layer.
 func (layer Layer) CreateField(fd FieldDefinition, approxOK bool) error {
 	return ErrFromOGRErr(C.OGR_L_CreateField(layer.cval, fd.cval, BoolToCInt(approxOK)))
 }
 
-// Delete a field from the layer
+// DeleteField deletes a field from the layer.
 func (layer Layer) DeleteField(index int) error {
 	return ErrFromOGRErr(C.OGR_L_DeleteField(layer.cval, C.int(index)))
 }
 
-// Reorder all the fields of a layer
+// ReorderFields wraps the corresponding GDAL/OGR operation.
 func (layer Layer) ReorderFields(layerMap []int) error {
 	if len(layerMap) == 0 {
 		return fmt.Errorf("layerMap must not be empty")
@@ -1452,49 +1470,49 @@ func (layer Layer) ReorderFields(layerMap []int) error {
 	return ErrFromOGRErr(C.OGR_L_ReorderFields(layer.cval, cIntSlicePtr(cLayerMap)))
 }
 
-// Reorder an existing field of a layer
+// ReorderField wraps the corresponding GDAL/OGR operation.
 func (layer Layer) ReorderField(oldIndex, newIndex int) error {
 	return ErrFromOGRErr(C.OGR_L_ReorderField(layer.cval, C.int(oldIndex), C.int(newIndex)))
 }
 
-// Alter the definition of an existing field of a layer
+// AlterFieldDefn wraps the corresponding GDAL/OGR operation.
 func (layer Layer) AlterFieldDefn(index int, newDefn FieldDefinition, flags int) error {
 	return ErrFromOGRErr(C.OGR_L_AlterFieldDefn(layer.cval, C.int(index), newDefn.cval, C.int(flags)))
 }
 
-// Begin a transation on data sources which support it
+// StartTransaction begins a transation on data sources which support it.
 func (layer Layer) StartTransaction() error {
 	return ErrFromOGRErr(C.OGR_L_StartTransaction(layer.cval))
 }
 
-// Commit a transaction on data sources which support it
+// CommitTransaction commits a transaction on data sources which support it.
 func (layer Layer) CommitTransaction() error {
 	return ErrFromOGRErr(C.OGR_L_CommitTransaction(layer.cval))
 }
 
-// Roll back the current transaction on data sources which support it
+// RollbackTransaction rolls back the current transaction on data sources which support it.
 func (layer Layer) RollbackTransaction() error {
 	return ErrFromOGRErr(C.OGR_L_RollbackTransaction(layer.cval))
 }
 
-// Flush pending changes to the layer
+// Sync flushes pending changes to the layer.
 func (layer Layer) Sync() error {
 	return ErrFromOGRErr(C.OGR_L_SyncToDisk(layer.cval))
 }
 
-// Fetch the name of the FID column
+// FIDColumn returns the name of the FID column.
 func (layer Layer) FIDColumn() string {
 	name := C.OGR_L_GetFIDColumn(layer.cval)
 	return C.GoString(name)
 }
 
-// Fetch the name of the geometry column
+// GeometryColumn returns the name of the geometry column.
 func (layer Layer) GeometryColumn() string {
 	name := C.OGR_L_GetGeometryColumn(layer.cval)
 	return C.GoString(name)
 }
 
-// Set which fields can be ignored when retrieving features from the layer
+// SetIgnoredFields sets which fields can be ignored when retrieving features from the layer.
 func (layer Layer) SetIgnoredFields(names []string) error {
 	length := len(names)
 	cNames := make([]*C.char, length+1)
@@ -1539,11 +1557,12 @@ func (layer Layer) SetIgnoredFields(names []string) error {
 /*      Data source functions                                           */
 /* -------------------------------------------------------------------- */
 
+// DataSource is an exported GDAL/OGR type.
 type DataSource struct {
 	cval C.OGRDataSourceH
 }
 
-// Open a file / data source with one of the registered drivers
+// OpenDataSource opens a file / data source with one of the registered drivers.
 func OpenDataSource(name string, update int) DataSource {
 	cName := C.CString(name)
 	defer C.free(unsafe.Pointer(cName))
@@ -1551,7 +1570,7 @@ func OpenDataSource(name string, update int) DataSource {
 	return DataSource{ds}
 }
 
-// Open a shared file / data source with one of the registered drivers
+// OpenSharedDataSource opens a shared file / data source with one of the registered drivers.
 func OpenSharedDataSource(name string, update int) DataSource {
 	cName := C.CString(name)
 	defer C.free(unsafe.Pointer(cName))
@@ -1559,47 +1578,47 @@ func OpenSharedDataSource(name string, update int) DataSource {
 	return DataSource{ds}
 }
 
-// Drop a reference to this datasource and destroy if reference is zero
+// Release drops a reference to this datasource and destroy if reference is zero.
 func (ds DataSource) Release() error {
 	return ErrFromOGRErr(C.OGRReleaseDataSource(ds.cval))
 }
 
-// Return the number of opened data sources
+// OpenDataSourceCount returns the number of opened data sources.
 func OpenDataSourceCount() int {
 	count := C.OGRGetOpenDSCount()
 	return int(count)
 }
 
-// Return the i'th datasource opened
+// OpenDataSourceByIndex returns the i'th datasource opened.
 func OpenDataSourceByIndex(index int) DataSource {
 	ds := C.OGRGetOpenDS(C.int(index))
 	return DataSource{ds}
 }
 
-// Closes datasource and releases resources
+// Destroy closes datasource and releases resources.
 func (ds DataSource) Destroy() {
 	C.OGR_DS_Destroy(ds.cval)
 }
 
-// Fetch the name of the data source
+// Name returns the name of the data source.
 func (ds DataSource) Name() string {
 	name := C.OGR_DS_GetName(ds.cval)
 	return C.GoString(name)
 }
 
-// Fetch the number of layers in this data source
+// LayerCount returns the number of layers in this data source.
 func (ds DataSource) LayerCount() int {
 	count := C.OGR_DS_GetLayerCount(ds.cval)
 	return int(count)
 }
 
-// Fetch a layer of this data source by index
+// LayerByIndex returns a layer of this data source by index.
 func (ds DataSource) LayerByIndex(index int) Layer {
 	layer := C.OGR_DS_GetLayer(ds.cval, C.int(index))
 	return Layer{layer}
 }
 
-// Fetch a layer of this data source by name
+// LayerByName returns a layer of this data source by name.
 func (ds DataSource) LayerByName(name string) Layer {
 	cString := C.CString(name)
 	defer C.free(unsafe.Pointer(cString))
@@ -1612,13 +1631,13 @@ func (ds DataSource) Delete(index int) error {
 	return ErrFromOGRErr(C.OGR_DS_DeleteLayer(ds.cval, C.int(index)))
 }
 
-// Fetch the driver that the data source was opened with
+// Driver returns the driver that the data source was opened with.
 func (ds DataSource) Driver() OGRDriver {
 	driver := C.OGR_DS_GetDriver(ds.cval)
 	return OGRDriver{driver}
 }
 
-// Create a new layer on the data source
+// CreateLayer creates a new layer on the data source.
 func (ds DataSource) CreateLayer(
 	name string,
 	sr SpatialReference,
@@ -1646,7 +1665,7 @@ func (ds DataSource) CreateLayer(
 	return Layer{layer}
 }
 
-// Duplicate an existing layer
+// CopyLayer duplicates an existing layer.
 func (ds DataSource) CopyLayer(
 	source Layer,
 	name string,
@@ -1672,7 +1691,7 @@ func (ds DataSource) CopyLayer(
 	return Layer{layer}
 }
 
-// Test if the data source has the indicated capability
+// TestCapability reports whether the data source has the indicated capability.
 func (ds DataSource) TestCapability(capability string) bool {
 	cString := C.CString(capability)
 	defer C.free(unsafe.Pointer(cString))
@@ -1680,7 +1699,7 @@ func (ds DataSource) TestCapability(capability string) bool {
 	return val != 0
 }
 
-// Execute an SQL statement against the data source
+// ExecuteSQL wraps the corresponding GDAL/OGR operation.
 func (ds DataSource) ExecuteSQL(sql string, filter Geometry, dialect string) Layer {
 	cSQL := C.CString(sql)
 	defer C.free(unsafe.Pointer(cSQL))
@@ -1691,12 +1710,12 @@ func (ds DataSource) ExecuteSQL(sql string, filter Geometry, dialect string) Lay
 	return Layer{layer}
 }
 
-// Release the results of ExecuteSQL
+// ReleaseResultSet wraps the corresponding GDAL/OGR operation.
 func (ds DataSource) ReleaseResultSet(layer Layer) {
 	C.OGR_DS_ReleaseResultSet(ds.cval, layer.cval)
 }
 
-// Flush pending changes to the data source
+// Sync flushes pending changes to the data source.
 func (ds DataSource) Sync() error {
 	return ErrFromOGRErr(C.OGR_DS_SyncToDisk(ds.cval))
 }
@@ -1705,17 +1724,18 @@ func (ds DataSource) Sync() error {
 /*      Driver functions                                                */
 /* -------------------------------------------------------------------- */
 
+// OGRDriver is an exported GDAL/OGR type.
 type OGRDriver struct {
 	cval C.OGRSFDriverH
 }
 
-// Fetch name of driver (file format)
+// Name returns name of driver (file format).
 func (driver OGRDriver) Name() string {
 	name := C.OGR_Dr_GetName(driver.cval)
 	return C.GoString(name)
 }
 
-// Attempt to open file with this driver
+// Open attempts to open file with this driver.
 func (driver OGRDriver) Open(filename string, update int) (newDS DataSource, ok bool) {
 	cFilename := C.CString(filename)
 	defer C.free(unsafe.Pointer(cFilename))
@@ -1723,7 +1743,7 @@ func (driver OGRDriver) Open(filename string, update int) (newDS DataSource, ok 
 	return DataSource{ds}, ds != nil
 }
 
-// Test if this driver supports the named capability
+// TestCapability reports whether this driver supports the named capability.
 func (driver OGRDriver) TestCapability(capability string) bool {
 	cString := C.CString(capability)
 	defer C.free(unsafe.Pointer(cString))
@@ -1748,7 +1768,7 @@ func (driver OGRDriver) Create(name string, options []string) (newDS DataSource,
 	return DataSource{ds}, ds != nil
 }
 
-// Create a new datasource with this driver by copying all layers of the existing datasource
+// Copy creates a new datasource with this driver by copying all layers of the existing datasource.
 func (driver OGRDriver) Copy(source DataSource, name string, options []string) (newDS DataSource, ok bool) {
 	cName := C.CString(name)
 	defer C.free(unsafe.Pointer(cName))
@@ -1772,29 +1792,29 @@ func (driver OGRDriver) Delete(filename string) error {
 	return ErrFromOGRErr(C.OGR_Dr_DeleteDataSource(driver.cval, cFilename))
 }
 
-// Add a driver to the list of registered drivers
+// Register adds a driver to the list of registered drivers.
 func (driver OGRDriver) Register() {
 	C.OGRRegisterDriver(driver.cval)
 }
 
-// Remove a driver from the list of registered drivers
+// Deregister removes a driver from the list of registered drivers.
 func (driver OGRDriver) Deregister() {
 	C.OGRDeregisterDriver(driver.cval)
 }
 
-// Fetch the number of registered drivers
+// OGRDriverCount returns the number of registered drivers.
 func OGRDriverCount() int {
 	count := C.OGRGetDriverCount()
 	return int(count)
 }
 
-// Fetch the indicated driver by index
+// OGRDriverByIndex returns the indicated driver by index.
 func OGRDriverByIndex(index int) OGRDriver {
 	driver := C.OGRGetDriver(C.int(index))
 	return OGRDriver{driver}
 }
 
-// Fetch the indicated driver by name
+// OGRDriverByName returns the indicated driver by name.
 func OGRDriverByName(name string) OGRDriver {
 	cName := C.CString(name)
 	defer C.free(unsafe.Pointer(cName))
@@ -1806,14 +1826,17 @@ func OGRDriverByName(name string) OGRDriver {
 /*      Style manager functions                                         */
 /* -------------------------------------------------------------------- */
 
+// StyleMgr is an exported GDAL/OGR type.
 type StyleMgr struct {
 	cval C.OGRStyleMgrH
 }
 
+// StyleTool is an exported GDAL/OGR type.
 type StyleTool struct {
 	cval C.OGRStyleToolH
 }
 
+// StyleTable is an exported GDAL/OGR type.
 type StyleTable struct {
 	cval C.OGRStyleTableH
 }

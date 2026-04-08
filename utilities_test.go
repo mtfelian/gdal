@@ -6,6 +6,7 @@ import (
 	"testing"
 )
 
+// TestMain wraps the corresponding GDAL/OGR operation.
 func TestMain(m *testing.M) {
 	if err := os.MkdirAll("./tmp", 0777); err != nil {
 		panic(err)
@@ -14,6 +15,7 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
+// TestVectorTranslate wraps the corresponding GDAL/OGR operation.
 func TestVectorTranslate(t *testing.T) {
 	srcDS, err := OpenEx("testdata/test.shp", OFReadOnly, nil, nil, nil)
 	if err != nil {
@@ -35,6 +37,8 @@ func TestVectorTranslate(t *testing.T) {
 	dstDS.Close()
 
 }
+
+// TestRasterize wraps the corresponding GDAL/OGR operation.
 func TestRasterize(t *testing.T) {
 	srcDS, err := OpenEx("testdata/test.shp", OFReadOnly, nil, nil, nil)
 	if err != nil {
@@ -56,6 +60,7 @@ func TestRasterize(t *testing.T) {
 	dstDS.Close()
 }
 
+// TestWarp wraps the corresponding GDAL/OGR operation.
 func TestWarp(t *testing.T) {
 	srcDS, err := Open("testdata/tiles.gpkg", ReadOnly)
 	if err != nil {
@@ -75,6 +80,7 @@ func TestWarp(t *testing.T) {
 	dstDS.Close()
 }
 
+// TestTranslate wraps the corresponding GDAL/OGR operation.
 func TestTranslate(t *testing.T) {
 	srcDS, err := Open("testdata/tiles.gpkg", ReadOnly)
 	if err != nil {
@@ -97,6 +103,7 @@ func TestTranslate(t *testing.T) {
 	dstDS.Close()
 }
 
+// TestDEMProcessing wraps the corresponding GDAL/OGR operation.
 func TestDEMProcessing(t *testing.T) {
 	srcDS, err := Open("testdata/demproc.tif", ReadOnly)
 	if err != nil {
@@ -119,6 +126,7 @@ func TestDEMProcessing(t *testing.T) {
 	dstDS.Close()
 }
 
+// TestEnumerateDrivers wraps the corresponding GDAL/OGR operation.
 func TestEnumerateDrivers(t *testing.T) {
 	fmt.Println(">>>>> Drivers:")
 	for i := 0; i < GetDriverCount(); i++ {
@@ -130,6 +138,7 @@ func TestEnumerateDrivers(t *testing.T) {
 	}
 }
 
+// TestGenerateContours wraps the corresponding GDAL/OGR operation.
 func TestGenerateContours(t *testing.T) {
 	srcDS, err := Open("testdata/demproc.tif", ReadOnly)
 	if err != nil {

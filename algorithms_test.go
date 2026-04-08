@@ -36,6 +36,7 @@ func readGridFile(filename string) (x, y, z []float64, err error) {
 	return
 }
 
+// TestGridCreate wraps the corresponding GDAL/OGR operation.
 func TestGridCreate(t *testing.T) {
 	x, y, z, err := readGridFile("testdata/grid.csv")
 	if err != nil {

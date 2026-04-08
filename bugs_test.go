@@ -69,6 +69,7 @@ func addLayerField(t *testing.T, layer Layer, name string, fieldType FieldType) 
 	}
 }
 
+// TestFeatureListFieldsRoundTrip wraps the corresponding GDAL/OGR operation.
 func TestFeatureListFieldsRoundTrip(t *testing.T) {
 	ds, layer := createMemoryVectorLayer(t, "roundtrip")
 	defer ds.Destroy()
@@ -111,6 +112,7 @@ func TestFeatureListFieldsRoundTrip(t *testing.T) {
 	}
 }
 
+// TestFeatureSetFromWithMapUsesFieldMap wraps the corresponding GDAL/OGR operation.
 func TestFeatureSetFromWithMapUsesFieldMap(t *testing.T) {
 	ds, layer := createMemoryVectorLayer(t, "mapped")
 	defer ds.Destroy()
@@ -140,6 +142,7 @@ func TestFeatureSetFromWithMapUsesFieldMap(t *testing.T) {
 	}
 }
 
+// TestLayerReorderFieldsReordersDefinitions wraps the corresponding GDAL/OGR operation.
 func TestLayerReorderFieldsReordersDefinitions(t *testing.T) {
 	ds, layer := createMemoryVectorLayer(t, "reorder")
 	defer ds.Destroy()
@@ -160,6 +163,7 @@ func TestLayerReorderFieldsReordersDefinitions(t *testing.T) {
 	}
 }
 
+// TestEmptyInputsReturnErrorsInsteadOfPanicking wraps the corresponding GDAL/OGR operation.
 func TestEmptyInputsReturnErrorsInsteadOfPanicking(t *testing.T) {
 	if _, err := CreateFromWKB(nil, SpatialReference{}, 0); err == nil {
 		t.Fatal("CreateFromWKB(nil) returned nil error")
@@ -227,6 +231,7 @@ func TestEmptyInputsReturnErrorsInsteadOfPanicking(t *testing.T) {
 	}
 }
 
+// TestCoordinateTransformHandlesZeroPointsAndNilZ wraps the corresponding GDAL/OGR operation.
 func TestCoordinateTransformHandlesZeroPointsAndNilZ(t *testing.T) {
 	var zero CoordinateTransform
 	if !zero.Transform(0, nil, nil, nil) {
@@ -259,6 +264,7 @@ func TestCoordinateTransformHandlesZeroPointsAndNilZ(t *testing.T) {
 	}
 }
 
+// TestNilStringListsReturnEmptySlices wraps the corresponding GDAL/OGR operation.
 func TestNilStringListsReturnEmptySlices(t *testing.T) {
 	raster := createMemoryRasterDataset(t, 8, 8, 1, Byte)
 	defer raster.Close()
@@ -283,6 +289,7 @@ func TestNilStringListsReturnEmptySlices(t *testing.T) {
 	}
 }
 
+// TestSpatialReferenceToPCIRoundTrip wraps the corresponding GDAL/OGR operation.
 func TestSpatialReferenceToPCIRoundTrip(t *testing.T) {
 	sr := createSpatialReferenceFromEPSG(t, 32633)
 	defer sr.Destroy()
@@ -316,6 +323,7 @@ func TestSpatialReferenceToPCIRoundTrip(t *testing.T) {
 	}
 }
 
+// TestSpatialReferenceToUSGSRoundTrip wraps the corresponding GDAL/OGR operation.
 func TestSpatialReferenceToUSGSRoundTrip(t *testing.T) {
 	sr := createSpatialReferenceFromEPSG(t, 32633)
 	defer sr.Destroy()
@@ -360,6 +368,7 @@ func TestSpatialReferenceToUSGSRoundTrip(t *testing.T) {
 	}
 }
 
+// TestSpatialReferenceImportsHandleESRIAndURL wraps the corresponding GDAL/OGR operation.
 func TestSpatialReferenceImportsHandleESRIAndURL(t *testing.T) {
 	source := createSpatialReferenceFromEPSG(t, 4326)
 	defer source.Destroy()
@@ -401,6 +410,7 @@ func TestSpatialReferenceImportsHandleESRIAndURL(t *testing.T) {
 	}
 }
 
+// TestSpatialReferenceTextExportsReturnContent wraps the corresponding GDAL/OGR operation.
 func TestSpatialReferenceTextExportsReturnContent(t *testing.T) {
 	sr := createSpatialReferenceFromEPSG(t, 4326)
 	defer sr.Destroy()
@@ -446,6 +456,7 @@ func TestSpatialReferenceTextExportsReturnContent(t *testing.T) {
 	}
 }
 
+// TestRasterOutputFormatOptionsRespectExplicitOfFlag wraps the corresponding GDAL/OGR operation.
 func TestRasterOutputFormatOptionsRespectExplicitOfFlag(t *testing.T) {
 	options := []string{"-of", "GTiff", "-tr", "10", "10"}
 	got := ensureRasterOutputFormatOptions(options)
@@ -460,6 +471,7 @@ func TestRasterOutputFormatOptionsRespectExplicitOfFlag(t *testing.T) {
 	}
 }
 
+// TestGeometryExportsReturnContent wraps the corresponding GDAL/OGR operation.
 func TestGeometryExportsReturnContent(t *testing.T) {
 	geom := Create(GT_Point)
 	defer geom.Destroy()
@@ -490,6 +502,7 @@ func TestGeometryExportsReturnContent(t *testing.T) {
 	}
 }
 
+// TestDefaultHistogramReturnsUsableGoSlice wraps the corresponding GDAL/OGR operation.
 func TestDefaultHistogramReturnsUsableGoSlice(t *testing.T) {
 	ds, err := Open("testdata/demproc.tif", ReadOnly)
 	if err != nil {
@@ -520,6 +533,7 @@ func TestDefaultHistogramReturnsUsableGoSlice(t *testing.T) {
 	}
 }
 
+// TestHistogramRejectsNonPositiveBuckets wraps the corresponding GDAL/OGR operation.
 func TestHistogramRejectsNonPositiveBuckets(t *testing.T) {
 	ds, err := Open("testdata/demproc.tif", ReadOnly)
 	if err != nil {
@@ -532,6 +546,7 @@ func TestHistogramRejectsNonPositiveBuckets(t *testing.T) {
 	}
 }
 
+// TestMajorObjectMetadataMethods wraps the corresponding GDAL/OGR operation.
 func TestMajorObjectMetadataMethods(t *testing.T) {
 	ds := createMemoryRasterDataset(t, 4, 4, 1, Byte)
 	defer ds.Close()

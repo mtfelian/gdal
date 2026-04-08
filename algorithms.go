@@ -70,7 +70,7 @@ func (rb RasterBand) Checksum(xOff, yOff, xSize, ySize int) int {
 
 // ComputeProximity computes the proximity of all pixels in dest to selected
 // pixels in src.
-func (src RasterBand) ComputeProximity(
+func (rb RasterBand) ComputeProximity(
 	dest RasterBand,
 	options []string,
 	progress ProgressFunc,
@@ -89,7 +89,7 @@ func (src RasterBand) ComputeProximity(
 	opts[length] = (*C.char)(unsafe.Pointer(nil))
 
 	return ErrFromCPLErr(C.GDALComputeProximity(
-		src.cval,
+		rb.cval,
 		dest.cval,
 		(**C.char)(unsafe.Pointer(&opts[0])),
 		C.goGDALProgressFuncProxyB(),
@@ -99,7 +99,7 @@ func (src RasterBand) ComputeProximity(
 
 // FillNoData fills selected raster regions by interpolating from surrounding
 // pixels.
-func (src RasterBand) FillNoData(
+func (rb RasterBand) FillNoData(
 	mask RasterBand,
 	distance float64,
 	iterations int,
@@ -120,7 +120,7 @@ func (src RasterBand) FillNoData(
 	opts[length] = (*C.char)(unsafe.Pointer(nil))
 
 	return ErrFromCPLErr(C.GDALFillNodata(
-		src.cval,
+		rb.cval,
 		mask.cval,
 		C.double(distance),
 		0,
@@ -131,8 +131,8 @@ func (src RasterBand) FillNoData(
 	))
 }
 
-// Create polygon coverage from raster data using an integer buffer
-func (src RasterBand) Polygonize(
+// Polygonize creates polygon coverage from raster data using an integer buffer.
+func (rb RasterBand) Polygonize(
 	mask RasterBand,
 	layer Layer,
 	fieldIndex int,
@@ -153,7 +153,7 @@ func (src RasterBand) Polygonize(
 	opts[length] = (*C.char)(unsafe.Pointer(nil))
 
 	return ErrFromCPLErr(C.GDALPolygonize(
-		src.cval,
+		rb.cval,
 		mask.cval,
 		layer.cval,
 		C.int(fieldIndex),
@@ -163,8 +163,8 @@ func (src RasterBand) Polygonize(
 	))
 }
 
-// Create polygon coverage from raster data using a floating point buffer
-func (src RasterBand) FPolygonize(
+// FPolygonize creates polygon coverage from raster data using a floating point buffer.
+func (rb RasterBand) FPolygonize(
 	mask RasterBand,
 	layer Layer,
 	fieldIndex int,
@@ -185,7 +185,7 @@ func (src RasterBand) FPolygonize(
 	opts[length] = (*C.char)(unsafe.Pointer(nil))
 
 	return ErrFromCPLErr(C.GDALFPolygonize(
-		src.cval,
+		rb.cval,
 		mask.cval,
 		layer.cval,
 		C.int(fieldIndex),
@@ -195,8 +195,8 @@ func (src RasterBand) FPolygonize(
 	))
 }
 
-// Removes small raster polygons
-func (src RasterBand) SieveFilter(
+// SieveFilter wraps the corresponding GDAL/OGR operation.
+func (rb RasterBand) SieveFilter(
 	mask, dest RasterBand,
 	threshold, connectedness int,
 	options []string,
@@ -216,7 +216,7 @@ func (src RasterBand) SieveFilter(
 	opts[length] = (*C.char)(unsafe.Pointer(nil))
 
 	return ErrFromCPLErr(C.GDALSieveFilter(
-		src.cval,
+		rb.cval,
 		mask.cval,
 		dest.cval,
 		C.int(threshold),
@@ -300,6 +300,7 @@ func (src RasterBand) SieveFilter(
 // GridAlgorithm represents Grid Algorithm code
 type GridAlgorithm int
 
+// GA_InverseDistancetoAPower and related constants are exported GDAL/OGR symbols.
 const (
 	GA_InverseDistancetoAPower                = GridAlgorithm(C.GGA_InverseDistanceToAPower)
 	GA_MovingAverage                          = GridAlgorithm(C.GGA_MovingAverage)
@@ -314,7 +315,7 @@ const (
 	GA_InverseDistanceToAPowerNearestNeighbor = GridAlgorithm(C.GGA_InverseDistanceToAPowerNearestNeighbor)
 )
 
-// GridLinearOptions: Linear method control options.
+// GridLinearOptions represents GridLinearOptions: Linear method control options.
 type GridLinearOptions struct {
 	// Radius: in case the point to be interpolated does not fit into a triangle of the Delaunay triangulation,
 	// use that maximum distance to search a nearest neighbour, or use nodata otherwise. If set to -1, the search
@@ -324,7 +325,7 @@ type GridLinearOptions struct {
 	NoDataValue float64
 }
 
-// GridInverseDistanceToAPowerOptions: Inverse distance to a power method control options.
+// GridInverseDistanceToAPowerOptions represents GridInverseDistanceToAPowerOptions: Inverse distance to a power method control options.
 type GridInverseDistanceToAPowerOptions struct {
 	// Power: Weighting power
 	Power float64
@@ -351,8 +352,7 @@ type GridInverseDistanceToAPowerOptions struct {
 	NoDataValue float64
 }
 
-// GridInverseDistanceToAPowerNearestNeighborOptions: Inverse distance to a power, with nearest neighbour search,
-// control options
+// GridInverseDistanceToAPowerNearestNeighborOptions represents GridInverseDistanceToAPowerNearestNeighborOptions: Inverse distance to a power, with nearest neighbour search, control options.
 type GridInverseDistanceToAPowerNearestNeighborOptions struct {
 	// Power: Weighting power
 	Power float64
@@ -371,7 +371,7 @@ type GridInverseDistanceToAPowerNearestNeighborOptions struct {
 	NoDataValue float64
 }
 
-// GridMovingAverageOptions: Moving average method control options
+// GridMovingAverageOptions represents GridMovingAverageOptions: Moving average method control options.
 type GridMovingAverageOptions struct {
 	// Radius1: The first radius (X axis if rotation angle is 0) of search ellipse.
 	Radius1 float64
@@ -386,7 +386,7 @@ type GridMovingAverageOptions struct {
 	NoDataValue float64
 }
 
-// GridNearestNeighborOptions: Nearest neighbor method control options.
+// GridNearestNeighborOptions represents GridNearestNeighborOptions: Nearest neighbor method control options.
 type GridNearestNeighborOptions struct {
 	// Radius1: The first radius (X axis if rotation angle is 0) of search ellipse.
 	Radius1 float64
@@ -398,7 +398,7 @@ type GridNearestNeighborOptions struct {
 	NoDataValue float64
 }
 
-// GridDataMetricsOptions: Data metrics method control options
+// GridDataMetricsOptions represents GridDataMetricsOptions: Data metrics method control options.
 type GridDataMetricsOptions struct {
 	// Radius1: The first radius (X axis if rotation angle is 0) of search ellipse.
 	Radius1 float64
@@ -415,10 +415,7 @@ type GridDataMetricsOptions struct {
 
 var errInvalidOptionsTypeWasPassed = errors.New("invalid options type was passed")
 
-// GridCreate: Create regular grid from the scattered data.
-// This function takes the arrays of X and Y coordinates and corresponding Z values as input and computes
-// regular grid (or call it a raster) from these scattered data. You should supply geometry and extent of the
-// output grid.
+// GridCreate wraps the corresponding GDAL/OGR operation.
 func GridCreate(
 	algorithm GridAlgorithm,
 	options interface{},

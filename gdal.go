@@ -28,6 +28,7 @@ func goString(cstr *C.char) string {
 /*      Significant constants.                                          */
 /* -------------------------------------------------------------------- */
 
+// VERSION_MAJOR and related constants are exported GDAL/OGR symbols.
 const (
 	VERSION_MAJOR = int(C.GDAL_VERSION_MAJOR)
 	VERSION_MINOR = int(C.GDAL_VERSION_MINOR)
@@ -38,6 +39,7 @@ const (
 	RELEASE_NAME  = string(C.GDAL_RELEASE_NAME)
 )
 
+// DriverNameVRT and related constants are exported GDAL/OGR symbols.
 const (
 	DriverNameVRT             = "VRT"
 	DriverNameDERIVED         = "DERIVED"
@@ -264,6 +266,7 @@ const (
 	DriverNameHTTP            = "HTTP"
 )
 
+// OGRDriverNameESRIC and related constants are exported GDAL/OGR symbols.
 const (
 	OGRDriverNameESRIC         = "ESRIC"
 	OGRDriverNameFITS          = "FITS"
@@ -354,6 +357,7 @@ const (
 	OGRDriverNameHTTP          = "HTTP"
 )
 
+// ErrDebug and related variables are exported GDAL/OGR symbols.
 var (
 	ErrDebug   = errors.New("Debug Error")
 	ErrWarning = errors.New("Warning Error")
@@ -362,7 +366,7 @@ var (
 	ErrIllegal = errors.New("Illegal Error")
 )
 
-// Error handling.  The following is bare-bones, and needs to be replaced with something more useful.
+// ErrFromCPLErr wraps the corresponding GDAL/OGR operation.
 func ErrFromCPLErr(err C.CPLErr) error {
 	switch err {
 	case 0:
@@ -379,6 +383,7 @@ func ErrFromCPLErr(err C.CPLErr) error {
 	return ErrIllegal
 }
 
+// ErrFromOGRErr wraps the corresponding GDAL/OGR operation.
 func ErrFromOGRErr(err C.OGRErr) error {
 	switch err {
 	case 0:
@@ -395,9 +400,10 @@ func ErrFromOGRErr(err C.OGRErr) error {
 	return ErrIllegal
 }
 
-// Pixel data types
+// DataType represents Pixel data types.
 type DataType int
 
+// Unknown and related constants are exported GDAL/OGR symbols.
 const (
 	Unknown  = DataType(C.GDT_Unknown)
 	Byte     = DataType(C.GDT_Byte)
@@ -413,26 +419,29 @@ const (
 	CFloat64 = DataType(C.GDT_CFloat64)
 )
 
-// Get data type size in bits.
+// Size returns data type size in bits.
 func (dataType DataType) Size() int {
 	return int(C.GDALGetDataTypeSize(C.GDALDataType(dataType)))
 }
 
+// IsComplex wraps the corresponding GDAL/OGR operation.
 func (dataType DataType) IsComplex() int {
 	return int(C.GDALDataTypeIsComplex(C.GDALDataType(dataType)))
 }
 
+// Name wraps the corresponding GDAL/OGR operation.
 func (dataType DataType) Name() string {
 	return C.GoString(C.GDALGetDataTypeName(C.GDALDataType(dataType)))
 }
 
+// Union wraps the corresponding GDAL/OGR operation.
 func (dataType DataType) Union(dataTypeB DataType) DataType {
 	return DataType(
 		C.GDALDataTypeUnion(C.GDALDataType(dataType), C.GDALDataType(dataTypeB)),
 	)
 }
 
-// Safe array conversion
+// IntSliceToCInt wraps the corresponding GDAL/OGR operation.
 func IntSliceToCInt(data []int) []C.int {
 	sliceSz := len(data)
 	result := make([]C.int, sliceSz)
@@ -442,7 +451,7 @@ func IntSliceToCInt(data []int) []C.int {
 	return result
 }
 
-// Safe array conversion
+// CIntSliceToInt wraps the corresponding GDAL/OGR operation.
 func CIntSliceToInt(data []C.int) []int {
 	sliceSz := len(data)
 	result := make([]int, sliceSz)
@@ -451,6 +460,8 @@ func CIntSliceToInt(data []C.int) []int {
 	}
 	return result
 }
+
+// CUIntBigSliceToInt wraps the corresponding GDAL/OGR operation.
 func CUIntBigSliceToInt(data []C.GUIntBig) []int {
 	sliceSz := len(data)
 	result := make([]int, sliceSz)
@@ -460,9 +471,10 @@ func CUIntBigSliceToInt(data []C.GUIntBig) []int {
 	return result
 }
 
-// status of the asynchronous stream
+// AsyncStatusType represents status of the asynchronous stream.
 type AsyncStatusType int
 
+// AR_Pending and related constants are exported GDAL/OGR symbols.
 const (
 	AR_Pending  = AsyncStatusType(C.GARIO_PENDING)
 	AR_Update   = AsyncStatusType(C.GARIO_UPDATE)
@@ -470,19 +482,22 @@ const (
 	AR_Complete = AsyncStatusType(C.GARIO_COMPLETE)
 )
 
+// Name wraps the corresponding GDAL/OGR operation.
 func (statusType AsyncStatusType) Name() string {
 	return C.GoString(C.GDALGetAsyncStatusTypeName(C.GDALAsyncStatusType(statusType)))
 }
 
+// GetAsyncStatusTypeByName wraps the corresponding GDAL/OGR operation.
 func GetAsyncStatusTypeByName(statusTypeName string) AsyncStatusType {
 	name := C.CString(statusTypeName)
 	defer C.free(unsafe.Pointer(name))
 	return AsyncStatusType(C.GDALGetAsyncStatusTypeByName(name))
 }
 
-// Flag indicating read/write, or read-only access to data.
+// Access indicates read/write, or read-only access to data.
 type Access int
 
+// ReadOnly and related constants are exported GDAL/OGR symbols.
 const (
 	// Read only (no update) access
 	ReadOnly = Access(C.GA_ReadOnly)
@@ -490,9 +505,10 @@ const (
 	Update = Access(C.GA_Update)
 )
 
-// Read/Write flag for RasterIO() method
+// RWFlag represents the read/write flag for RasterIO() method.
 type RWFlag int
 
+// Read and related constants are exported GDAL/OGR symbols.
 const (
 	// Read data
 	Read = RWFlag(C.GF_Read)
@@ -500,8 +516,10 @@ const (
 	Write = RWFlag(C.GF_Write)
 )
 
+// OpenFlag is an exported GDAL/OGR type.
 type OpenFlag uint
 
+// OFReadOnly and related constants are exported GDAL/OGR symbols.
 const (
 	OFReadOnly      = OpenFlag(C.GDAL_OF_READONLY)
 	OFUpdate        = OpenFlag(C.GDAL_OF_UPDATE)
@@ -511,9 +529,10 @@ const (
 	OFVerbose_Error = OpenFlag(C.GDAL_OF_VERBOSE_ERROR)
 )
 
-// Types of color interpretation for raster bands.
+// ColorInterp represents the types of color interpretation for raster bands.
 type ColorInterp int
 
+// CI_Undefined and related constants are exported GDAL/OGR symbols.
 const (
 	CI_Undefined      = ColorInterp(C.GCI_Undefined)
 	CI_GrayIndex      = ColorInterp(C.GCI_GrayIndex)
@@ -535,19 +554,22 @@ const (
 	CI_Max            = ColorInterp(C.GCI_Max)
 )
 
+// Name wraps the corresponding GDAL/OGR operation.
 func (colorInterp ColorInterp) Name() string {
 	return C.GoString(C.GDALGetColorInterpretationName(C.GDALColorInterp(colorInterp)))
 }
 
+// GetColorInterpretationByName wraps the corresponding GDAL/OGR operation.
 func GetColorInterpretationByName(name string) ColorInterp {
 	cName := C.CString(name)
 	defer C.free(unsafe.Pointer(cName))
 	return ColorInterp(C.GDALGetColorInterpretationByName(cName))
 }
 
-// Types of color interpretations for a GDALColorTable.
+// PaletteInterp represents the types of color interpretations for a GDALColorTable.
 type PaletteInterp int
 
+// PI_Gray and related constants are exported GDAL/OGR symbols.
 const (
 	// Grayscale (in GDALColorEntry.c1)
 	PI_Gray = PaletteInterp(C.GPI_Gray)
@@ -559,11 +581,12 @@ const (
 	PI_HLS = PaletteInterp(C.GPI_HLS)
 )
 
+// Name wraps the corresponding GDAL/OGR operation.
 func (paletteInterp PaletteInterp) Name() string {
 	return C.GoString(C.GDALGetPaletteInterpretationName(C.GDALPaletteInterp(paletteInterp)))
 }
 
-// Well-known metadata items.
+// MD_AREA_OR_POINT and related constants are exported GDAL/OGR symbols.
 const (
 	MD_AREA_OR_POINT = string(C.GDALMD_AREA_OR_POINT)
 	MD_AOP_AREA      = string(C.GDALMD_AOP_AREA)
@@ -693,7 +716,7 @@ func goGDALProgressFuncProxyA(complete C.double, message *C.char, data unsafe.Po
 	)
 }
 
-// CPLSetConfigOption
+// CPLSetConfigOption sets a GDAL configuration option.
 func CPLSetConfigOption(key, val string) {
 	cKey := C.CString(key)
 	defer C.free(unsafe.Pointer(cKey))
@@ -702,7 +725,7 @@ func CPLSetConfigOption(key, val string) {
 	C.CPLSetConfigOption(cKey, cVal)
 }
 
-// CPLGetConfigOption
+// CPLGetConfigOption returns a GDAL configuration option.
 func CPLGetConfigOption(key, val string) string {
 	cKey := C.CString(key)
 	defer C.free(unsafe.Pointer(cKey))
@@ -716,6 +739,7 @@ func CPLGetConfigOption(key, val string) string {
 /*      Registration/driver related.                                    */
 /* ==================================================================== */
 
+// DMD_LONGNAME and related constants are exported GDAL/OGR symbols.
 const (
 	DMD_LONGNAME           = string(C.GDAL_DMD_LONGNAME)
 	DMD_HELPTOPIC          = string(C.GDAL_DMD_HELPTOPIC)
@@ -757,7 +781,7 @@ func (driver Driver) Create(
 	return Dataset{h}
 }
 
-// Create a copy of a dataset
+// CreateCopy creates a copy of a dataset.
 func (driver Driver) CreateCopy(
 	filename string,
 	sourceDataset Dataset,
@@ -804,7 +828,7 @@ func (driver Driver) CreateCopy(
 	return Dataset{h}
 }
 
-// Return the driver needed to access the provided dataset name.
+// IdentifyDriver returns the driver needed to access the provided dataset name.
 func IdentifyDriver(filename string, filenameList []string) Driver {
 	cFilename := C.CString(filename)
 	defer C.free(unsafe.Pointer(cFilename))
@@ -833,7 +857,7 @@ func Open(filename string, access Access) (Dataset, error) {
 	return Dataset{dataset}, nil
 }
 
-// Open an existing dataset
+// OpenEx opens an existing dataset.
 func OpenEx(filename string, flags OpenFlag, allowedDrivers []string,
 	openOptions []string, siblingFiles []string) (Dataset, error) {
 	cFilename := C.CString(filename)
@@ -878,7 +902,7 @@ func OpenEx(filename string, flags OpenFlag, allowedDrivers []string,
 	return Dataset{dataset}, nil
 }
 
-// Open a shared existing dataset
+// OpenShared opens a shared existing dataset.
 func OpenShared(filename string, access Access) Dataset {
 	cFilename := C.CString(filename)
 	defer C.free(unsafe.Pointer(cFilename))
@@ -889,7 +913,7 @@ func OpenShared(filename string, access Access) Dataset {
 
 // Unimplemented: DumpOpenDatasets
 
-// Return the driver by short name
+// GetDriverByName returns the driver by short name.
 func GetDriverByName(driverName string) (Driver, error) {
 	cName := C.CString(driverName)
 	defer C.free(unsafe.Pointer(cName))
@@ -901,13 +925,13 @@ func GetDriverByName(driverName string) (Driver, error) {
 	return Driver{driver}, nil
 }
 
-// Fetch the number of registered drivers.
+// GetDriverCount returns the number of registered drivers.
 func GetDriverCount() int {
 	nDrivers := C.GDALGetDriverCount()
 	return int(nDrivers)
 }
 
-// Fetch driver by index
+// GetDriver returns driver by index.
 func GetDriver(index int) Driver {
 	driver := C.GDALGetDriver(C.int(index))
 	return Driver{driver}
@@ -918,23 +942,23 @@ func (driver Driver) Destroy() {
 	C.GDALDestroyDriver(driver.cval)
 }
 
-// Registers a driver for use
+// Register wraps the corresponding GDAL/OGR operation.
 func (driver Driver) Register() int {
 	index := C.GDALRegisterDriver(driver.cval)
 	return int(index)
 }
 
-// Reregister the driver
+// Deregister wraps the corresponding GDAL/OGR operation.
 func (driver Driver) Deregister() {
 	C.GDALDeregisterDriver(driver.cval)
 }
 
-// Destroy the driver manager
+// DestroyDriverManager destroys the driver manager.
 func DestroyDriverManager() {
 	C.GDALDestroyDriverManager()
 }
 
-// Delete named dataset
+// DeleteDataset deletes named dataset.
 func (driver Driver) DeleteDataset(name string) error {
 	cDriver := driver.cval
 	cName := C.CString(name)
@@ -942,7 +966,7 @@ func (driver Driver) DeleteDataset(name string) error {
 	return ErrFromCPLErr(C.GDALDeleteDataset(cDriver, cName))
 }
 
-// Rename named dataset
+// RenameDataset wraps the corresponding GDAL/OGR operation.
 func (driver Driver) RenameDataset(newName, oldName string) error {
 	cDriver := driver.cval
 	cNewName := C.CString(newName)
@@ -952,7 +976,7 @@ func (driver Driver) RenameDataset(newName, oldName string) error {
 	return ErrFromCPLErr(C.GDALRenameDataset(cDriver, cNewName, cOldName))
 }
 
-// Copy all files associated with the named dataset
+// CopyDatasetFiles wraps the corresponding GDAL/OGR operation.
 func (driver Driver) CopyDatasetFiles(newName, oldName string) error {
 	cDriver := driver.cval
 	cNewName := C.CString(newName)
@@ -962,13 +986,13 @@ func (driver Driver) CopyDatasetFiles(newName, oldName string) error {
 	return ErrFromCPLErr(C.GDALCopyDatasetFiles(cDriver, cNewName, cOldName))
 }
 
-// Get the short name associated with this driver
+// ShortName returns the short name associated with this driver.
 func (driver Driver) ShortName() string {
 	cDriver := driver.cval
 	return C.GoString(C.GDALGetDriverShortName(cDriver))
 }
 
-// Get the long name associated with this driver
+// LongName returns the long name associated with this driver.
 func (driver Driver) LongName() string {
 	cDriver := driver.cval
 	return C.GoString(C.GDALGetDriverLongName(cDriver))
@@ -988,14 +1012,14 @@ func (driver Driver) LongName() string {
 /*      major objects (dataset, and, driver, drivermanager).            */
 /* ==================================================================== */
 
-// Fetch object description
+// Description returns object description.
 func (object MajorObject) Description() string {
 	cObject := object.cval
 	desc := C.GoString(C.GDALGetDescription(cObject))
 	return desc
 }
 
-// Set object description
+// SetDescription sets object description.
 func (object MajorObject) SetDescription(desc string) {
 	cObject := object.cval
 	cDesc := C.CString(desc)
@@ -1003,13 +1027,15 @@ func (object MajorObject) SetDescription(desc string) {
 	C.GDALSetDescription(cObject, cDesc)
 }
 
-// Fetch metadata
+// Metadata returns metadata.
 func (object MajorObject) Metadata(domain string) []string {
 	cDomain := C.CString(domain)
 	defer C.free(unsafe.Pointer(cDomain))
 
 	return cStringListToSlice(C.GDALGetMetadata(object.cval, cDomain))
 }
+
+// Metadata wraps the corresponding GDAL/OGR operation.
 func (dataset *Dataset) Metadata(domain string) []string {
 	cDomain := C.CString(domain)
 	defer C.free(unsafe.Pointer(cDomain))
@@ -1020,7 +1046,7 @@ func (dataset *Dataset) Metadata(domain string) []string {
 	))
 }
 
-// Set metadata
+// SetMetadata sets metadata.
 func (object MajorObject) SetMetadata(metadata []string, domain string) {
 	cDomain := C.CString(domain)
 	defer C.free(unsafe.Pointer(cDomain))
@@ -1042,7 +1068,7 @@ func (object MajorObject) SetMetadata(metadata []string, domain string) {
 	C.GDALSetMetadata(object.cval, cMetadataPtr, cDomain)
 }
 
-// Fetch a single metadata item
+// MetadataItem returns a single metadata item.
 func (object MajorObject) MetadataItem(name, domain string) string {
 	cName := C.CString(name)
 	defer C.free(unsafe.Pointer(cName))
@@ -1053,7 +1079,7 @@ func (object MajorObject) MetadataItem(name, domain string) string {
 	return goString(C.GDALGetMetadataItem(object.cval, cName, cDomain))
 }
 
-// Set a single metadata item
+// SetMetadataItem sets a single metadata item.
 func (object MajorObject) SetMetadataItem(name, value, domain string) {
 	cName := C.CString(name)
 	defer C.free(unsafe.Pointer(cName))
@@ -1069,81 +1095,86 @@ func (object MajorObject) SetMetadataItem(name, value, domain string) {
 
 // TODO: Make correct class hirerarchy via interfaces
 
+// SetMetadataItem wraps the corresponding GDAL/OGR operation.
 func (rasterBand *RasterBand) SetMetadataItem(name, value, domain string) error {
-	c_name := C.CString(name)
-	defer C.free(unsafe.Pointer(c_name))
+	cName := C.CString(name)
+	defer C.free(unsafe.Pointer(cName))
 
-	c_value := C.CString(value)
-	defer C.free(unsafe.Pointer(c_value))
+	cValue := C.CString(value)
+	defer C.free(unsafe.Pointer(cValue))
 
-	c_domain := C.CString(domain)
-	defer C.free(unsafe.Pointer(c_domain))
+	cDomain := C.CString(domain)
+	defer C.free(unsafe.Pointer(cDomain))
 
 	return ErrFromCPLErr(C.GDALSetMetadataItem(
 		C.GDALMajorObjectH(unsafe.Pointer(rasterBand.cval)),
-		c_name, c_value, c_domain,
+		cName, cValue, cDomain,
 	))
 }
 
 // TODO: Make korrekt class hirerarchy via interfaces
 
-func (object *Dataset) SetMetadataItem(name, value, domain string) error {
-	c_name := C.CString(name)
-	defer C.free(unsafe.Pointer(c_name))
+// SetMetadataItem wraps the corresponding GDAL/OGR operation.
+func (dataset *Dataset) SetMetadataItem(name, value, domain string) error {
+	cName := C.CString(name)
+	defer C.free(unsafe.Pointer(cName))
 
-	c_value := C.CString(value)
-	defer C.free(unsafe.Pointer(c_value))
+	cValue := C.CString(value)
+	defer C.free(unsafe.Pointer(cValue))
 
-	c_domain := C.CString(domain)
-	defer C.free(unsafe.Pointer(c_domain))
+	cDomain := C.CString(domain)
+	defer C.free(unsafe.Pointer(cDomain))
 
 	return ErrFromCPLErr(C.GDALSetMetadataItem(
-		C.GDALMajorObjectH(unsafe.Pointer(object.cval)),
-		c_name, c_value, c_domain,
+		C.GDALMajorObjectH(unsafe.Pointer(dataset.cval)),
+		cName, cValue, cDomain,
 	))
 }
 
-// Fetch single metadata item.
-func (object *Driver) MetadataItem(name, domain string) string {
-	c_name := C.CString(name)
-	defer C.free(unsafe.Pointer(c_name))
+// MetadataItem returns single metadata item.
+func (driver *Driver) MetadataItem(name, domain string) string {
+	cName := C.CString(name)
+	defer C.free(unsafe.Pointer(cName))
 
-	c_domain := C.CString(domain)
-	defer C.free(unsafe.Pointer(c_domain))
-
-	return goString(
-		C.GDALGetMetadataItem(
-			C.GDALMajorObjectH(unsafe.Pointer(object.cval)),
-			c_name, c_domain,
-		),
-	)
-}
-func (object *Dataset) MetadataItem(name, domain string) string {
-	c_name := C.CString(name)
-	defer C.free(unsafe.Pointer(c_name))
-
-	c_domain := C.CString(domain)
-	defer C.free(unsafe.Pointer(c_domain))
+	cDomain := C.CString(domain)
+	defer C.free(unsafe.Pointer(cDomain))
 
 	return goString(
 		C.GDALGetMetadataItem(
-			C.GDALMajorObjectH(unsafe.Pointer(object.cval)),
-			c_name, c_domain,
+			C.GDALMajorObjectH(unsafe.Pointer(driver.cval)),
+			cName, cDomain,
 		),
 	)
 }
 
-func (object *RasterBand) MetadataItem(name, domain string) string {
-	c_name := C.CString(name)
-	defer C.free(unsafe.Pointer(c_name))
+// MetadataItem wraps the corresponding GDAL/OGR operation.
+func (dataset *Dataset) MetadataItem(name, domain string) string {
+	cName := C.CString(name)
+	defer C.free(unsafe.Pointer(cName))
 
-	c_domain := C.CString(domain)
-	defer C.free(unsafe.Pointer(c_domain))
+	cDomain := C.CString(domain)
+	defer C.free(unsafe.Pointer(cDomain))
 
 	return goString(
 		C.GDALGetMetadataItem(
-			C.GDALMajorObjectH(unsafe.Pointer(object.cval)),
-			c_name, c_domain,
+			C.GDALMajorObjectH(unsafe.Pointer(dataset.cval)),
+			cName, cDomain,
+		),
+	)
+}
+
+// MetadataItem wraps the corresponding GDAL/OGR operation.
+func (rasterBand *RasterBand) MetadataItem(name, domain string) string {
+	cName := C.CString(name)
+	defer C.free(unsafe.Pointer(cName))
+
+	cDomain := C.CString(domain)
+	defer C.free(unsafe.Pointer(cDomain))
+
+	return goString(
+		C.GDALGetMetadataItem(
+			C.GDALMajorObjectH(unsafe.Pointer(rasterBand.cval)),
+			cName, cDomain,
 		),
 	)
 }
@@ -1152,13 +1183,13 @@ func (object *RasterBand) MetadataItem(name, domain string) string {
 /*      GDALDataset class ... normally this represents one file.        */
 /* ==================================================================== */
 
-// Get the driver to which this dataset relates
+// Driver returns the driver to which this dataset relates.
 func (dataset Dataset) Driver() Driver {
 	driver := Driver{C.GDALGetDatasetDriver(dataset.cval)}
 	return driver
 }
 
-// Fetch files forming the dataset.
+// FileList returns files forming the dataset.
 func (dataset Dataset) FileList() []string {
 	return cStringListToSlice(C.GDALGetFileList(dataset.cval))
 }
@@ -1169,31 +1200,31 @@ func (dataset Dataset) Close() {
 	return
 }
 
-// Fetch X size of raster
+// RasterXSize returns X size of raster.
 func (dataset Dataset) RasterXSize() int {
 	xSize := int(C.GDALGetRasterXSize(dataset.cval))
 	return xSize
 }
 
-// Fetch Y size of raster
+// RasterYSize returns Y size of raster.
 func (dataset Dataset) RasterYSize() int {
 	ySize := int(C.GDALGetRasterYSize(dataset.cval))
 	return ySize
 }
 
-// Fetch the number of raster bands in the dataset
+// RasterCount returns the number of raster bands in the dataset.
 func (dataset Dataset) RasterCount() int {
 	count := int(C.GDALGetRasterCount(dataset.cval))
 	return count
 }
 
-// Fetch a raster band object from a dataset
+// RasterBand returns a raster band object from a dataset.
 func (dataset Dataset) RasterBand(band int) RasterBand {
 	rasterBand := RasterBand{C.GDALGetRasterBand(dataset.cval, C.int(band))}
 	return rasterBand
 }
 
-// Add a band to a dataset
+// AddBand adds a band to a dataset.
 func (dataset Dataset) AddBand(dataType DataType, options []string) error {
 	length := len(options)
 	cOptions := make([]*C.char, length+1)
@@ -1210,8 +1241,10 @@ func (dataset Dataset) AddBand(dataType DataType, options []string) error {
 	))
 }
 
+// ResampleAlg is an exported GDAL/OGR type.
 type ResampleAlg int
 
+// GRA_NearestNeighbour and related constants are exported GDAL/OGR symbols.
 const (
 	GRA_NearestNeighbour = ResampleAlg(0)
 	GRA_Bilinear         = ResampleAlg(1)
@@ -1220,15 +1253,16 @@ const (
 	GRA_Lanczos          = ResampleAlg(4)
 )
 
+// AutoCreateWarpedVRT wraps the corresponding GDAL/OGR operation.
 func (dataset Dataset) AutoCreateWarpedVRT(srcWKT, dstWKT string, resampleAlg ResampleAlg) (Dataset, error) {
-	c_srcWKT := C.CString(srcWKT)
-	defer C.free(unsafe.Pointer(c_srcWKT))
-	c_dstWKT := C.CString(dstWKT)
-	defer C.free(unsafe.Pointer(c_dstWKT))
+	cSrcWKT := C.CString(srcWKT)
+	defer C.free(unsafe.Pointer(cSrcWKT))
+	cDstWKT := C.CString(dstWKT)
+	defer C.free(unsafe.Pointer(cDstWKT))
 	/*
 
 	 */
-	h := C.GDALAutoCreateWarpedVRT(dataset.cval, c_srcWKT, c_dstWKT, C.GDALResampleAlg(resampleAlg), 0.0, nil)
+	h := C.GDALAutoCreateWarpedVRT(dataset.cval, cSrcWKT, cDstWKT, C.GDALResampleAlg(resampleAlg), 0.0, nil)
 	d := Dataset{h}
 	if h == nil {
 		return d, fmt.Errorf("AutoCreateWarpedVRT failed")
@@ -1304,7 +1338,7 @@ func determineBufferType(buffer interface{}) (dataType DataType, dataPtr unsafe.
 	return
 }
 
-// Read / write a region of image data from multiple bands
+// IO reads or writes a region of image data from multiple bands.
 func (dataset Dataset) IO(
 	rwFlag RWFlag,
 	xOff, yOff, xSize, ySize int,
@@ -1344,7 +1378,7 @@ func (dataset Dataset) IO(
 	))
 }
 
-// Advise driver of upcoming read requests
+// AdviseRead wraps the corresponding GDAL/OGR operation.
 func (dataset Dataset) AdviseRead(
 	rwFlag RWFlag,
 	xOff, yOff, xSize, ySize, bufXSize, bufYSize int,
@@ -1384,13 +1418,13 @@ func (dataset Dataset) AdviseRead(
 	))
 }
 
-// Fetch the projection definition string for this dataset
+// Projection returns the projection definition string for this dataset.
 func (dataset Dataset) Projection() string {
 	proj := C.GoString(C.GDALGetProjectionRef(dataset.cval))
 	return proj
 }
 
-// Set the projection reference string
+// SetProjection sets the projection reference string.
 func (dataset Dataset) SetProjection(proj string) error {
 	cProj := C.CString(proj)
 	defer C.free(unsafe.Pointer(cProj))
@@ -1398,14 +1432,14 @@ func (dataset Dataset) SetProjection(proj string) error {
 	return ErrFromCPLErr(C.GDALSetProjection(dataset.cval, cProj))
 }
 
-// Get the affine transformation coefficients
+// GeoTransform returns the affine transformation coefficients.
 func (dataset Dataset) GeoTransform() [6]float64 {
 	var transform [6]float64
 	C.GDALGetGeoTransform(dataset.cval, (*C.double)(unsafe.Pointer(&transform[0])))
 	return transform
 }
 
-// Set the affine transformation coefficients
+// SetGeoTransform sets the affine transformation coefficients.
 func (dataset Dataset) SetGeoTransform(transform [6]float64) error {
 	return ErrFromCPLErr(C.GDALSetGeoTransform(
 		dataset.cval,
@@ -1413,19 +1447,19 @@ func (dataset Dataset) SetGeoTransform(transform [6]float64) error {
 	))
 }
 
-// Return the inverted transform
+// InvGeoTransform returns the inverted transform.
 func (dataset Dataset) InvGeoTransform() [6]float64 {
 	return InvGeoTransform(dataset.GeoTransform())
 }
 
-// Invert the supplied transform
+// InvGeoTransform wraps the corresponding GDAL/OGR operation.
 func InvGeoTransform(transform [6]float64) [6]float64 {
 	var result [6]float64
 	C.GDALInvGeoTransform((*C.double)(unsafe.Pointer(&transform[0])), (*C.double)(unsafe.Pointer(&result[0])))
 	return result
 }
 
-// Get number of GCPs
+// GDALGetGCPCount returns number of GCPs.
 func (dataset Dataset) GDALGetGCPCount() int {
 	count := C.GDALGetGCPCount(dataset.cval)
 	return int(count)
@@ -1435,7 +1469,7 @@ func (dataset Dataset) GDALGetGCPCount() int {
 // Unimplemented: GDALGetGCPs
 // Unimplemented: GDALSetGCPs
 
-// Fetch a format specific internally meaningful handle
+// GDALGetInternalHandle returns a format specific internally meaningful handle.
 func (dataset Dataset) GDALGetInternalHandle(request string) unsafe.Pointer {
 	cRequest := C.CString(request)
 	defer C.free(unsafe.Pointer(cRequest))
@@ -1444,19 +1478,19 @@ func (dataset Dataset) GDALGetInternalHandle(request string) unsafe.Pointer {
 	return ptr
 }
 
-// Add one to dataset reference count
+// GDALReferenceDataset adds one to dataset reference count.
 func (dataset Dataset) GDALReferenceDataset() int {
 	count := C.GDALReferenceDataset(dataset.cval)
 	return int(count)
 }
 
-// Subtract one from dataset reference count
+// GDALDereferenceDataset wraps the corresponding GDAL/OGR operation.
 func (dataset Dataset) GDALDereferenceDataset() int {
 	count := C.GDALDereferenceDataset(dataset.cval)
 	return int(count)
 }
 
-// Build raster overview(s)
+// BuildOverviews builds raster overview(s).
 func (dataset Dataset) BuildOverviews(
 	resampling string,
 	nOverviews int,
@@ -1501,25 +1535,25 @@ func (dataset Dataset) BuildOverviews(
 
 // Unimplemented: GDALGetOpenDatasets
 
-// Return access flag
+// Access returns access flag.
 func (dataset Dataset) Access() Access {
 	accessVal := C.GDALGetAccess(dataset.cval)
 	return Access(accessVal)
 }
 
-// Write all write cached data to disk
+// FlushCache writes all write cached data to disk.
 func (dataset Dataset) FlushCache() {
 	C.GDALFlushCache(dataset.cval)
 	return
 }
 
-// Adds a mask band to the dataset
+// CreateMaskBand wraps the corresponding GDAL/OGR operation.
 func (dataset Dataset) CreateMaskBand(flags int) error {
 	return ErrFromCPLErr(C.GDALCreateDatasetMaskBand(dataset.cval, C.int(flags)))
 }
 
-// Copy all dataset raster data
-func (sourceDataset Dataset) CopyWholeRaster(
+// CopyWholeRaster wraps the corresponding GDAL/OGR operation.
+func (dataset Dataset) CopyWholeRaster(
 	destDataset Dataset,
 	options []string,
 	progress ProgressFunc,
@@ -1536,7 +1570,7 @@ func (sourceDataset Dataset) CopyWholeRaster(
 	cOptions[length] = (*C.char)(unsafe.Pointer(nil))
 
 	return ErrFromCPLErr(C.GDALDatasetCopyWholeRaster(
-		sourceDataset.cval,
+		dataset.cval,
 		destDataset.cval,
 		(**C.char)(unsafe.Pointer(&cOptions[0])),
 		C.goGDALProgressFuncProxyB(),
@@ -1548,20 +1582,20 @@ func (sourceDataset Dataset) CopyWholeRaster(
 /*      GDALRasterBand ... one band/channel in a dataset.               */
 /* ==================================================================== */
 
-// Fetch the pixel data type for this band
+// RasterDataType returns the pixel data type for this band.
 func (rasterBand RasterBand) RasterDataType() DataType {
 	dataType := C.GDALGetRasterDataType(rasterBand.cval)
 	return DataType(dataType)
 }
 
-// Fetch the "natural" block size of this band
+// BlockSize returns the "natural" block size of this band.
 func (rasterBand RasterBand) BlockSize() (int, int) {
 	var xSize, ySize C.int
 	C.GDALGetBlockSize(rasterBand.cval, &xSize, &ySize)
 	return int(xSize), int(ySize)
 }
 
-// Advise driver of upcoming read requests
+// AdviseRead wraps the corresponding GDAL/OGR operation.
 func (rasterBand RasterBand) AdviseRead(
 	xOff, yOff, xSize, ySize, bufXSize, bufYSize int,
 	dataType DataType,
@@ -1583,7 +1617,7 @@ func (rasterBand RasterBand) AdviseRead(
 	))
 }
 
-// Read / Write a region of image data for this band
+// IO reads or writes a region of image data for this band.
 func (rasterBand RasterBand) IO(
 	rwFlag RWFlag,
 	xOff, yOff, xSize, ySize int,
@@ -1607,104 +1641,104 @@ func (rasterBand RasterBand) IO(
 	))
 }
 
-// Read a block of image data efficiently
+// ReadBlock reads a block of image data efficiently.
 func (rasterBand RasterBand) ReadBlock(xOff, yOff int, dataPtr unsafe.Pointer) error {
 	return ErrFromCPLErr(C.GDALReadBlock(rasterBand.cval, C.int(xOff), C.int(yOff), dataPtr))
 }
 
-// Write a block of image data efficiently
+// WriteBlock writes a block of image data efficiently.
 func (rasterBand RasterBand) WriteBlock(xOff, yOff int, dataPtr unsafe.Pointer) error {
 	return ErrFromCPLErr(C.GDALWriteBlock(rasterBand.cval, C.int(xOff), C.int(yOff), dataPtr))
 }
 
-// Fetch X size of raster
+// XSize returns X size of raster.
 func (rasterBand RasterBand) XSize() int {
 	xSize := C.GDALGetRasterBandXSize(rasterBand.cval)
 	return int(xSize)
 }
 
-// Fetch Y size of raster
+// YSize returns Y size of raster.
 func (rasterBand RasterBand) YSize() int {
 	ySize := C.GDALGetRasterBandYSize(rasterBand.cval)
 	return int(ySize)
 }
 
-// Find out if we have update permission for this band
+// GetAccess wraps the corresponding GDAL/OGR operation.
 func (rasterBand RasterBand) GetAccess() Access {
 	access := C.GDALGetRasterAccess(rasterBand.cval)
 	return Access(access)
 }
 
-// Fetch the band number of this raster band
+// BandNumber returns the band number of this raster band.
 func (rasterBand RasterBand) BandNumber() int {
 	bandNumber := C.GDALGetBandNumber(rasterBand.cval)
 	return int(bandNumber)
 }
 
-// Fetch the owning dataset handle
+// GetDataset returns the owning dataset handle.
 func (rasterBand RasterBand) GetDataset() Dataset {
 	dataset := C.GDALGetBandDataset(rasterBand.cval)
 	return Dataset{dataset}
 }
 
-// How should this band be interpreted as color?
+// ColorInterp wraps the corresponding GDAL/OGR operation.
 func (rasterBand RasterBand) ColorInterp() ColorInterp {
 	colorInterp := C.GDALGetRasterColorInterpretation(rasterBand.cval)
 	return ColorInterp(colorInterp)
 }
 
-// Set color interpretation of the raster band
+// SetColorInterp sets color interpretation of the raster band.
 func (rasterBand RasterBand) SetColorInterp(colorInterp ColorInterp) error {
 	return ErrFromCPLErr(C.GDALSetRasterColorInterpretation(rasterBand.cval, C.GDALColorInterp(colorInterp)))
 }
 
-// Fetch the color table associated with this raster band
+// ColorTable returns the color table associated with this raster band.
 func (rasterBand RasterBand) ColorTable() ColorTable {
 	colorTable := C.GDALGetRasterColorTable(rasterBand.cval)
 	return ColorTable{colorTable}
 }
 
-// Set the raster color table for this raster band
+// SetColorTable sets the raster color table for this raster band.
 func (rasterBand RasterBand) SetColorTable(colorTable ColorTable) error {
 	return ErrFromCPLErr(C.GDALSetRasterColorTable(rasterBand.cval, colorTable.cval))
 }
 
-// Check for arbitrary overviews
+// HasArbitraryOverviews wraps the corresponding GDAL/OGR operation.
 func (rasterBand RasterBand) HasArbitraryOverviews() int {
 	yes := C.GDALHasArbitraryOverviews(rasterBand.cval)
 	return int(yes)
 }
 
-// Return the number of overview layers available
+// OverviewCount returns the number of overview layers available.
 func (rasterBand RasterBand) OverviewCount() int {
 	count := C.GDALGetOverviewCount(rasterBand.cval)
 	return int(count)
 }
 
-// Fetch overview raster band object
+// Overview returns overview raster band object.
 func (rasterBand RasterBand) Overview(level int) RasterBand {
 	overview := C.GDALGetOverview(rasterBand.cval, C.int(level))
 	return RasterBand{overview}
 }
 
-// Fetch the no data value for this band
+// NoDataValue returns the no data value for this band.
 func (rasterBand RasterBand) NoDataValue() (val float64, valid bool) {
 	var success C.int
 	noDataVal := C.GDALGetRasterNoDataValue(rasterBand.cval, &success)
 	return float64(noDataVal), success != 0
 }
 
-// Set the no data value for this band
+// SetNoDataValue sets the no data value for this band.
 func (rasterBand RasterBand) SetNoDataValue(val float64) error {
 	return ErrFromCPLErr(C.GDALSetRasterNoDataValue(rasterBand.cval, C.double(val)))
 }
 
-// Fetch the list of category names for this raster
+// CategoryNames returns the list of category names for this raster.
 func (rasterBand RasterBand) CategoryNames() []string {
 	return cStringListToSlice(C.GDALGetRasterCategoryNames(rasterBand.cval))
 }
 
-// Set the category names for this band
+// SetRasterCategoryNames sets the category names for this band.
 func (rasterBand RasterBand) SetRasterCategoryNames(names []string) error {
 	length := len(names)
 	cStrings := make([]*C.char, length+1)
@@ -1717,21 +1751,21 @@ func (rasterBand RasterBand) SetRasterCategoryNames(names []string) error {
 	return ErrFromCPLErr(C.GDALSetRasterCategoryNames(rasterBand.cval, (**C.char)(unsafe.Pointer(&cStrings[0]))))
 }
 
-// Fetch the minimum value for this band
+// GetMinimum returns the minimum value for this band.
 func (rasterBand RasterBand) GetMinimum() (val float64, valid bool) {
 	var success C.int
 	min := C.GDALGetRasterMinimum(rasterBand.cval, &success)
 	return float64(min), success != 0
 }
 
-// Fetch the maximum value for this band
+// GetMaximum returns the maximum value for this band.
 func (rasterBand RasterBand) GetMaximum() (val float64, valid bool) {
 	var success C.int
 	max := C.GDALGetRasterMaximum(rasterBand.cval, &success)
 	return float64(max), success != 0
 }
 
-// Fetch image statistics
+// GetStatistics returns image statistics.
 func (rasterBand RasterBand) GetStatistics(approxOK, force int) (min, max, mean, stdDev float64) {
 	C.GDALGetRasterStatistics(
 		rasterBand.cval,
@@ -1745,7 +1779,7 @@ func (rasterBand RasterBand) GetStatistics(approxOK, force int) (min, max, mean,
 	return min, max, mean, stdDev
 }
 
-// Compute image statistics
+// ComputeStatistics computes image statistics.
 func (rasterBand RasterBand) ComputeStatistics(
 	approxOK int,
 	progress ProgressFunc,
@@ -1766,7 +1800,7 @@ func (rasterBand RasterBand) ComputeStatistics(
 	return min, max, mean, stdDev
 }
 
-// Set statistics on raster band
+// SetStatistics sets statistics on raster band.
 func (rasterBand RasterBand) SetStatistics(min, max, mean, stdDev float64) error {
 	return ErrFromCPLErr(C.GDALSetRasterStatistics(
 		rasterBand.cval,
@@ -1777,13 +1811,13 @@ func (rasterBand RasterBand) SetStatistics(min, max, mean, stdDev float64) error
 	))
 }
 
-// Return raster unit type
+// GetUnitType returns raster unit type.
 func (rasterBand RasterBand) GetUnitType() string {
 	cString := C.GDALGetRasterUnitType(rasterBand.cval)
 	return C.GoString(cString)
 }
 
-// Set unit type
+// SetUnitType sets unit type.
 func (rasterBand RasterBand) SetUnitType(unit string) error {
 	cString := C.CString(unit)
 	defer C.free(unsafe.Pointer(cString))
@@ -1791,31 +1825,31 @@ func (rasterBand RasterBand) SetUnitType(unit string) error {
 	return ErrFromCPLErr(C.GDALSetRasterUnitType(rasterBand.cval, cString))
 }
 
-// Fetch the raster value offset
+// GetOffset returns the raster value offset.
 func (rasterBand RasterBand) GetOffset() (float64, bool) {
 	var success C.int
 	val := C.GDALGetRasterOffset(rasterBand.cval, &success)
 	return float64(val), success != 0
 }
 
-// Set scaling offset
+// SetOffset sets scaling offset.
 func (rasterBand RasterBand) SetOffset(offset float64) error {
 	return ErrFromCPLErr(C.GDALSetRasterOffset(rasterBand.cval, C.double(offset)))
 }
 
-// Fetch the raster value scale
+// GetScale returns the raster value scale.
 func (rasterBand RasterBand) GetScale() (float64, bool) {
 	var success C.int
 	val := C.GDALGetRasterScale(rasterBand.cval, &success)
 	return float64(val), success != 0
 }
 
-// Set scaling ratio
+// SetScale sets scaling ratio.
 func (rasterBand RasterBand) SetScale(scale float64) error {
 	return ErrFromCPLErr(C.GDALSetRasterScale(rasterBand.cval, C.double(scale)))
 }
 
-// Compute the min / max values for a band
+// ComputeMinMax computes the min / max values for a band.
 func (rasterBand RasterBand) ComputeMinMax(approxOK int) (min, max float64) {
 	var minmax [2]float64
 	C.GDALComputeRasterMinMax(
@@ -1825,12 +1859,12 @@ func (rasterBand RasterBand) ComputeMinMax(approxOK int) (min, max float64) {
 	return minmax[0], minmax[1]
 }
 
-// Flush raster data cache
+// FlushCache flushes raster data cache.
 func (rasterBand RasterBand) FlushCache() {
 	C.GDALFlushRasterCache(rasterBand.cval)
 }
 
-// Compute raster histogram
+// Histogram computes raster histogram.
 func (rasterBand RasterBand) Histogram(
 	min, max float64,
 	buckets int,
@@ -1860,12 +1894,11 @@ func (rasterBand RasterBand) Histogram(
 		unsafe.Pointer(arg),
 	)); err != nil {
 		return nil, err
-	} else {
-		return CUIntBigSliceToInt(histogram), nil
 	}
+	return CUIntBigSliceToInt(histogram), nil
 }
 
-// Fetch default raster histogram
+// DefaultHistogram returns default raster histogram.
 func (rasterBand RasterBand) DefaultHistogram(
 	force int,
 	progress ProgressFunc,
@@ -1912,38 +1945,38 @@ func (rasterBand RasterBand) Fill(real, imaginary float64) error {
 
 // Unimplemented: OverviewMagnitudeCorrection
 
-// Fetch default Raster Attribute Table
+// GetDefaultRAT returns default Raster Attribute Table.
 func (rasterBand RasterBand) GetDefaultRAT() RasterAttributeTable {
 	rat := C.GDALGetDefaultRAT(rasterBand.cval)
 	return RasterAttributeTable{rat}
 }
 
-// Set default Raster Attribute Table
+// SetDefaultRAT sets default Raster Attribute Table.
 func (rasterBand RasterBand) SetDefaultRAT(rat RasterAttributeTable) error {
 	return ErrFromCPLErr(C.GDALSetDefaultRAT(rasterBand.cval, rat.cval))
 }
 
 // Unimplemented: AddDerivedBandPixelFunc
 
-// Return the mask band associated with the band
+// GetMaskBand returns the mask band associated with the band.
 func (rasterBand RasterBand) GetMaskBand() RasterBand {
 	mask := C.GDALGetMaskBand(rasterBand.cval)
 	return RasterBand{mask}
 }
 
-// Return the status flags of the mask band associated with the band
+// GetMaskFlags returns the status flags of the mask band associated with the band.
 func (rasterBand RasterBand) GetMaskFlags() int {
 	flags := C.GDALGetMaskFlags(rasterBand.cval)
 	return int(flags)
 }
 
-// Adds a mask band to the current band
+// CreateMaskBand wraps the corresponding GDAL/OGR operation.
 func (rasterBand RasterBand) CreateMaskBand(flags int) error {
 	return ErrFromCPLErr(C.GDALCreateMaskBand(rasterBand.cval, C.int(flags)))
 }
 
-// Copy all raster band raster data
-func (sourceRaster RasterBand) RasterBandCopyWholeRaster(
+// RasterBandCopyWholeRaster wraps the corresponding GDAL/OGR operation.
+func (rasterBand RasterBand) RasterBandCopyWholeRaster(
 	destRaster RasterBand,
 	options []string,
 	progress ProgressFunc,
@@ -1960,7 +1993,7 @@ func (sourceRaster RasterBand) RasterBandCopyWholeRaster(
 	cOptions[length] = (*C.char)(unsafe.Pointer(nil))
 
 	return ErrFromCPLErr(C.GDALRasterBandCopyWholeRaster(
-		sourceRaster.cval,
+		rasterBand.cval,
 		destRaster.cval,
 		(**C.char)(unsafe.Pointer(&cOptions[0])),
 		C.goGDALProgressFuncProxyB(),
@@ -1983,7 +2016,7 @@ func (sourceRaster RasterBand) RasterBandCopyWholeRaster(
 /*      Color tables.                                                   */
 /* ==================================================================== */
 
-// Construct a new color table
+// CreateColorTable wraps the corresponding GDAL/OGR operation.
 func CreateColorTable(interp PaletteInterp) ColorTable {
 	ct := C.GDALCreateColorTable(C.GDALPaletteInterp(interp))
 	return ColorTable{ct}
@@ -1994,25 +2027,25 @@ func (ct ColorTable) Destroy() {
 	C.GDALDestroyColorTable(ct.cval)
 }
 
-// Make a copy of the color table
+// Clone wraps the corresponding GDAL/OGR operation.
 func (ct ColorTable) Clone() ColorTable {
 	newCT := C.GDALCloneColorTable(ct.cval)
 	return ColorTable{newCT}
 }
 
-// Fetch palette interpretation
+// PaletteInterpretation returns palette interpretation.
 func (ct ColorTable) PaletteInterpretation() PaletteInterp {
 	pi := C.GDALGetPaletteInterpretation(ct.cval)
 	return PaletteInterp(pi)
 }
 
-// Get number of color entries in table
+// EntryCount returns number of color entries in table.
 func (ct ColorTable) EntryCount() int {
 	count := C.GDALGetColorEntryCount(ct.cval)
 	return int(count)
 }
 
-// Fetch a color entry from table
+// Entry returns a color entry from table.
 func (ct ColorTable) Entry(index int) ColorEntry {
 	entry := C.GDALGetColorEntry(ct.cval, C.int(index))
 	return ColorEntry{*entry}
@@ -2020,12 +2053,12 @@ func (ct ColorTable) Entry(index int) ColorEntry {
 
 // Unimplemented: EntryAsRGB
 
-// Set entry in color table
+// SetEntry sets entry in color table.
 func (ct ColorTable) SetEntry(index int, entry ColorEntry) {
 	C.GDALSetColorEntry(ct.cval, C.int(index), &entry.cval)
 }
 
-// Create color ramp
+// CreateColorRamp creates color ramp.
 func (ct ColorTable) CreateColorRamp(start, end int, startColor, endColor ColorEntry) {
 	C.GDALCreateColorRamp(ct.cval, C.int(start), &startColor.cval, C.int(end), &endColor.cval)
 }
@@ -2034,16 +2067,20 @@ func (ct ColorTable) CreateColorRamp(start, end int, startColor, endColor ColorE
 /*      Raster Attribute Table                                          */
 /* ==================================================================== */
 
+// RATFieldType is an exported GDAL/OGR type.
 type RATFieldType int
 
+// GFT_Integer and related constants are exported GDAL/OGR symbols.
 const (
 	GFT_Integer = RATFieldType(C.GFT_Integer)
 	GFT_Real    = RATFieldType(C.GFT_Real)
 	GFT_String  = RATFieldType(C.GFT_String)
 )
 
+// RATFieldUsage is an exported GDAL/OGR type.
 type RATFieldUsage int
 
+// GFU_Generic and related constants are exported GDAL/OGR symbols.
 const (
 	GFU_Generic    = RATFieldUsage(C.GFU_Generic)
 	GFU_PixelCount = RATFieldUsage(C.GFU_PixelCount)
@@ -2066,7 +2103,7 @@ const (
 	GFU_MaxCount   = RATFieldUsage(C.GFU_MaxCount)
 )
 
-// Construct empty raster attribute table
+// CreateRasterAttributeTable wraps the corresponding GDAL/OGR operation.
 func CreateRasterAttributeTable() RasterAttributeTable {
 	rat := C.GDALCreateRasterAttributeTable()
 	return RasterAttributeTable{rat}
@@ -2077,106 +2114,106 @@ func (rat RasterAttributeTable) Destroy() {
 	C.GDALDestroyRasterAttributeTable(rat.cval)
 }
 
-// Fetch table column count
+// ColumnCount returns table column count.
 func (rat RasterAttributeTable) ColumnCount() int {
 	count := C.GDALRATGetColumnCount(rat.cval)
 	return int(count)
 }
 
-// Fetch the name of indicated column
+// NameOfCol returns the name of indicated column.
 func (rat RasterAttributeTable) NameOfCol(index int) string {
 	name := C.GDALRATGetNameOfCol(rat.cval, C.int(index))
 	return C.GoString(name)
 }
 
-// Fetch the usage of indicated column
+// UsageOfCol returns the usage of indicated column.
 func (rat RasterAttributeTable) UsageOfCol(index int) RATFieldUsage {
 	rfu := C.GDALRATGetUsageOfCol(rat.cval, C.int(index))
 	return RATFieldUsage(rfu)
 }
 
-// Fetch the type of indicated column
+// TypeOfCol returns the type of indicated column.
 func (rat RasterAttributeTable) TypeOfCol(index int) RATFieldType {
 	rft := C.GDALRATGetTypeOfCol(rat.cval, C.int(index))
 	return RATFieldType(rft)
 }
 
-// Fetch column index for indicated usage
+// ColOfUsage returns column index for indicated usage.
 func (rat RasterAttributeTable) ColOfUsage(rfu RATFieldUsage) int {
 	index := C.GDALRATGetColOfUsage(rat.cval, C.GDALRATFieldUsage(rfu))
 	return int(index)
 }
 
-// Fetch row count
+// RowCount returns row count.
 func (rat RasterAttributeTable) RowCount() int {
 	count := C.GDALRATGetRowCount(rat.cval)
 	return int(count)
 }
 
-// Fetch field value as string
+// ValueAsString returns field value as string.
 func (rat RasterAttributeTable) ValueAsString(row, field int) string {
 	cString := C.GDALRATGetValueAsString(rat.cval, C.int(row), C.int(field))
 	return C.GoString(cString)
 }
 
-// Fetch field value as integer
+// ValueAsInt returns field value as integer.
 func (rat RasterAttributeTable) ValueAsInt(row, field int) int {
 	val := C.GDALRATGetValueAsInt(rat.cval, C.int(row), C.int(field))
 	return int(val)
 }
 
-// Fetch field value as float64
+// ValueAsFloat64 returns field value as float64.
 func (rat RasterAttributeTable) ValueAsFloat64(row, field int) float64 {
 	val := C.GDALRATGetValueAsDouble(rat.cval, C.int(row), C.int(field))
 	return float64(val)
 }
 
-// Set field value from string
+// SetValueAsString sets field value from string.
 func (rat RasterAttributeTable) SetValueAsString(row, field int, val string) {
 	cVal := C.CString(val)
 	defer C.free(unsafe.Pointer(cVal))
 	C.GDALRATSetValueAsString(rat.cval, C.int(row), C.int(field), cVal)
 }
 
-// Set field value from integer
+// SetValueAsInt sets field value from integer.
 func (rat RasterAttributeTable) SetValueAsInt(row, field, val int) {
 	C.GDALRATSetValueAsInt(rat.cval, C.int(row), C.int(field), C.int(val))
 }
 
-// Set field value from float64
+// SetValueAsFloat64 sets field value from float64.
 func (rat RasterAttributeTable) SetValueAsFloat64(row, field int, val float64) {
 	C.GDALRATSetValueAsDouble(rat.cval, C.int(row), C.int(field), C.double(val))
 }
 
-// Set row count
+// SetRowCount sets row count.
 func (rat RasterAttributeTable) SetRowCount(count int) {
 	C.GDALRATSetRowCount(rat.cval, C.int(count))
 }
 
-// Create new column
+// CreateColumn creates new column.
 func (rat RasterAttributeTable) CreateColumn(name string, rft RATFieldType, rfu RATFieldUsage) error {
 	cName := C.CString(name)
 	defer C.free(unsafe.Pointer(cName))
 	return ErrFromCPLErr(C.GDALRATCreateColumn(rat.cval, cName, C.GDALRATFieldType(rft), C.GDALRATFieldUsage(rfu)))
 }
 
-// Set linear binning information
+// SetLinearBinning sets linear binning information.
 func (rat RasterAttributeTable) SetLinearBinning(row0min, binsize float64) error {
 	return ErrFromCPLErr(C.GDALRATSetLinearBinning(rat.cval, C.double(row0min), C.double(binsize)))
 }
 
-// Fetch linear binning information
+// LinearBinning returns linear binning information.
 func (rat RasterAttributeTable) LinearBinning() (row0min, binsize float64, exists bool) {
 	success := C.GDALRATGetLinearBinning(rat.cval, (*C.double)(&row0min), (*C.double)(&binsize))
 	return row0min, binsize, success != 0
 }
 
-// Initialize RAT from color table
+// FromColorTable wraps the corresponding GDAL/OGR operation.
 func (rat RasterAttributeTable) FromColorTable(ct ColorTable) error {
 	return ErrFromCPLErr(C.GDALRATInitializeFromColorTable(rat.cval, ct.cval))
 }
 
-// Translate RAT to a color table
+// ToColorTable wraps the corresponding GDAL/OGR operation.
 func (rat RasterAttributeTable) ToColorTable(count int) ColorTable {
 	ct := C.GDALRATTranslateToColorTable(rat.cval, C.int(count))
 	return ColorTable{ct}
@@ -2185,7 +2222,7 @@ func (rat RasterAttributeTable) ToColorTable(count int) ColorTable {
 // Dump RAT in readable form to a file
 // Unimplemented: DumpReadable
 
-// Get row for pixel value
+// RowOfValue returns row for pixel value.
 func (rat RasterAttributeTable) RowOfValue(val float64) (int, bool) {
 	row := C.GDALRATGetRowOfValue(rat.cval, C.double(val))
 	return int(row), row != -1
@@ -2195,24 +2232,24 @@ func (rat RasterAttributeTable) RowOfValue(val float64) (int, bool) {
 /*      GDAL Cache Management                                           */
 /* ==================================================================== */
 
-// Set maximum cache memory
+// SetCacheMax sets maximum cache memory.
 func SetCacheMax(bytes int) {
 	C.GDALSetCacheMax64(C.GIntBig(bytes))
 }
 
-// Get maximum cache memory
+// GetCacheMax returns maximum cache memory.
 func GetCacheMax() int {
 	bytes := C.GDALGetCacheMax64()
 	return int(bytes)
 }
 
-// Get cache memory used
+// GetCacheUsed returns cache memory used.
 func GetCacheUsed() int {
 	bytes := C.GDALGetCacheUsed64()
 	return int(bytes)
 }
 
-// Try to flush one cached raster block
+// FlushCacheBlock wraps the corresponding GDAL/OGR operation.
 func FlushCacheBlock() bool {
 	flushed := C.GDALFlushCacheBlock()
 	return flushed != 0
@@ -2222,7 +2259,7 @@ func FlushCacheBlock() bool {
 /*      GDAL VSI Virtual File System                                    */
 /* ==================================================================== */
 
-// List VSI files
+// VSIReadDirRecursive wraps the corresponding GDAL/OGR operation.
 func VSIReadDirRecursive(filename string) []string {
 	name := C.CString(filename)
 	defer C.free(unsafe.Pointer(name))
@@ -2242,7 +2279,7 @@ func VSIReadDirRecursive(filename string) []string {
 	return strings
 }
 
-// Open file.
+// VSIFOpenL opens file.
 func VSIFOpenL(fileName string, fileAccess string) (VSILFILE, error) {
 	cFileName := C.CString(fileName)
 	defer C.free(unsafe.Pointer(cFileName))
@@ -2256,13 +2293,13 @@ func VSIFOpenL(fileName string, fileAccess string) (VSILFILE, error) {
 	return VSILFILE{file}, nil
 }
 
-// Close file.
+// VSIFCloseL closes file.
 func VSIFCloseL(file VSILFILE) {
 	C.VSIFCloseL(file.cval)
 	return
 }
 
-// Read bytes from file.
+// VSIFReadL reads bytes from file.
 func VSIFReadL(nSize, nCount int, file VSILFILE) []byte {
 	data := make([]byte, nSize*nCount)
 	p := unsafe.Pointer(&data[0])

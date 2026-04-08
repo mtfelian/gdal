@@ -8,6 +8,7 @@ import (
 	"testing"
 )
 
+// TestTiffDriver wraps the corresponding GDAL/OGR operation.
 func TestTiffDriver(t *testing.T) {
 	_, err := GetDriverByName(DriverNameGTiff)
 	if err != nil {
@@ -15,6 +16,7 @@ func TestTiffDriver(t *testing.T) {
 	}
 }
 
+// TestMissingMetadata wraps the corresponding GDAL/OGR operation.
 func TestMissingMetadata(t *testing.T) {
 	ds, err := Open("testdata/tiles.gpkg", ReadOnly)
 	if err != nil {
@@ -28,6 +30,7 @@ func TestMissingMetadata(t *testing.T) {
 	}
 }
 
+// TestMissingMetadataItem wraps the corresponding GDAL/OGR operation.
 func TestMissingMetadataItem(t *testing.T) {
 	ds, err := Open("testdata/demproc.tif", ReadOnly)
 	if err != nil {
