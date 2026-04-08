@@ -12,8 +12,6 @@ import (
 	"unsafe"
 )
 
-var _ = fmt.Println
-
 func init() {
 	C.GDALAllRegister()
 }
@@ -694,7 +692,6 @@ func ScaledProgress(complete float64, message string, data interface{}) int {
 // CreateScaledProgress is not implemented.
 func CreateScaledProgress(min, max float64, progress ProgressFunc, data unsafe.Pointer) unsafe.Pointer {
 	panic("not implemented!")
-	return nil
 }
 
 // DestroyScaledProgress releases a progress object created by GDAL.

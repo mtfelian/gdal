@@ -555,11 +555,6 @@ func (geometry Geometry) UnionCascaded() Geometry {
 }
 
 // Unimplemented: PointOn Surface (until 2.0)
-// Return a point guaranteed to lie on the surface
-// func (geom Geometry) PointOnSurface() Geometry {
-//  newGeom := C.OGR_G_PointOnSurface(geom.cval)
-//  return Geometry{newGeom}
-// }
 
 // Difference computes difference between this geometry and the other.
 func (geometry Geometry) Difference(other Geometry) Geometry {

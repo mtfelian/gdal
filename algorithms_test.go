@@ -3,8 +3,8 @@ package gdal
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"math"
+	"os"
 	"strconv"
 	"strings"
 	"testing"
@@ -12,7 +12,7 @@ import (
 
 func readGridFile(filename string) (x, y, z []float64, err error) {
 	var b []byte
-	if b, err = ioutil.ReadFile(filename); err != nil {
+	if b, err = os.ReadFile(filename); err != nil {
 		return
 	}
 	arr := strings.Split(strings.TrimSpace(string(b)), "\n")
